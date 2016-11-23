@@ -73,11 +73,11 @@
     }
     function sendEmail($destinatario, $oggetto, $corpo)
     {
-        mail($destinatario, $oggetto, $corpo);
+        //mail($destinatario, $oggetto, $corpo);
     }
     function sendEmailAdmin($oggetto, $corpo)
     {
-        mail(ADMIN_EMAIL, $oggetto, $corpo);
+        //mail(ADMIN_EMAIL, $oggetto, $corpo);
     }
     function sessionVerification()
     {

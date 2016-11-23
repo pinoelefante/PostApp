@@ -11,7 +11,10 @@
         const LOGIN_GIA_LOGGATO = 11;
         const LOGIN_NON_LOGGATO = 12;
 
-        const REG_CODICE_IN_USO = 20;
+        const REG_CODICE_IN_USO = 20; //registrazione utente ma codice già in uso
+
+        const EDITOR_IMPOSSIBILE_ASSEGNARE_AMMINISTRATORE = 50;
+        const EDITOR_ERRORE_CREAZIONE = 51;
 
         const UTENTE_NON_AUTORIZZATO = 30;
         const ENTE_NON_APPROVATO = 31;

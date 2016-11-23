@@ -9,7 +9,7 @@
     $responseContent = "";
     switch($action)
     {
-		case "RequireAccessCode":
+		case "RequestAccessCode":
 			$code = GeneraAccessCode();
 			if($code != FALSE)
 			{
@@ -26,7 +26,7 @@
 			{
 				//Login
 				Access($code);
-				//Registra al comune
+				//Registra al comune di residenza
 				RegistraComuneResidenza($localita);
 			}
 			break;
@@ -34,7 +34,6 @@
 			$code = getParameter("code", true);
 			$responseCode = Access($code);
 			break;
-		
         default:
             $responseCode = StatusCodes::METODO_ASSENTE;
             break;
@@ -108,7 +107,7 @@
 	function RegistraComuneResidenza($loc)
 	{
 		$idUtente = getIdUtenteFromSession();
-		$query = "INSERT INTO editor_follow (id_utente, id_editor) SELECT $idUtente AS id_utente, id FROM editor WHERE localita = ? AND categoria = 'Comune' AND approvato=1";
+		$query = "INSERT INTO editor_follow (id_utente, id_editor,cancellabile) SELECT $idUtente AS id_utente, id, 0 AS cancellabile FROM editor WHERE localita = ? AND categoria = 'Comune' AND approvato=1";
 		$dbConn = dbConnect();
 		$result = StatusCodes::FAIL;
 		if($st = $dbConn->prepare($query))
