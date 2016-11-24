@@ -15,12 +15,11 @@
 
         const EDITOR_IMPOSSIBILE_ASSEGNARE_AMMINISTRATORE = 50;
         const EDITOR_ERRORE_CREAZIONE = 51;
-
-        const UTENTE_NON_AUTORIZZATO = 30;
-        const ENTE_NON_APPROVATO = 31;
-
-        const LIKE_GIA_MESSO = 40;
-        const LIKE_NON_PRESENTE = 41;
+        const EDITOR_UTENTE_NON_AUTORIZZATO = 52;
+        const EDITOR_SEGUI_GIA = 53;
+        const EDITOR_NEWS_GIA_RINGRAZIATO = 54;
+        const EDITOR_NEWS_NON_TROVATA = 55;
+        const EDITOR_NEWS_GIA_LETTA = 56;
     }
     abstract class CategorieEnum extends BasicEnum
     {

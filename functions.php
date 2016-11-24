@@ -85,4 +85,11 @@
             return true;
         return false;
     }
+    //ritorna percorso salvataggio immagine
+    function SalvaImmagine($immagine)
+    {
+        if($immagine==NULL)
+            return NULL;
+        //TODO: salvataggio immagine su disco
+    }
 ?>
