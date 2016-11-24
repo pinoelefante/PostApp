@@ -5,4 +5,5 @@
     define('DBPASS', '');
     
     define('ADMIN_EMAIL', 'pinoelefante@hotmail.it');
+    define('SUPER_READER_ID', 1);
 ?>

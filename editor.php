@@ -21,12 +21,9 @@
                 $responseCode = RegistraEditor($nome, $categoria, $email, $telefono, $indirizzo, $localita);
                 if($responseCode == StatusCodes::OK)
                 {
-                    //invio email all'amministratore'
                     $dataIscr = date("d/m/Y H:i");
                     sendEmailAdmin("Iscrizione nuovo editor: $nome", 
                         "L'editor $nome si è iscritto a PostApp il $dataIscr ed è in attessa di approvazione");
-
-                    //TODO: registrazione a Super Reader
                 }
             }
             break;
@@ -71,23 +68,37 @@
             }
             break;
         case "AddDescrizione":
-
+            if(isLogged(true))
+            {
+                $descrizione = getParameter("descrizione", true);
+                $idEditor = getParameter("idEditor", true);
+                $responseCode = AddDescrizioneEditor($idEditor, $descrizione);
+            }
             break;
-        case "LoadEditorImage":
-
+        case "AddEditorImage":
+            if(isLogged(true))
+            {
+                $image = getParameter("immagine", true);
+                $idEditor = getParameter("idEditor", true);
+                $responseCode = AddImmagineEditor($idEditor, $image);
+            }
             break;
         case "Post":
             if(isLogged(true))
             {
                 $idEditor = getParameter("editor", true);
-                $responseCode = VerificaAutorizzazioneAPostare($idEditor);
-                if($responseCode == StatusCodes::OK)
+                $auth = VerificaAutorizzazioneAPostare($idEditor);
+                if($auth == StatusCodes::OK)
                 {
                     $titolo = getParameter("titolo", true);
                     $corpo = getParameter("corpo", true);
                     $immagine = getParameter("img");
                     $posizione = getParameter("posizione");
                     $responseCode = PostEditor($idEditor, getIdUtenteFromSession(), $titolo, $corpo, $immagine, $posizione);
+                    if($responseCode == StatusCodes::OK)
+                    {
+                        //TODO: invio notifica
+                    }
                 }
             }
             break;
@@ -109,6 +120,14 @@
             if(isLogged(true))
             {
                 $from = getParameter("from", true); //la data della news deve essere maggiore a from
+                $res = GetNotifications($from);
+                if(is_array($res))
+                {
+                    $responseCode = StatusCodes::OK;
+                    $responseContent = $res;
+                }
+                else
+                    $responseCode = $res;
             }
             break;
         case "ThanksForNews":
@@ -116,6 +135,7 @@
             {
                 $idNews = getParameter("idNews", true);
                 $idUtente = getIdUtenteFromSession();
+                $responseCode = ThanksForNews($idUtente, $idNews);
             }
             break;
         case "LeggiNews":
@@ -143,6 +163,53 @@
                     $responseCode = $res;
             //}
             break;
+        case "GetNewsFromAllEditors":
+            //per sito web
+            $idFrom = getParameter("idFrom");
+            $res = GetNewsDaTuttiGliEditor($idFrom);
+            if(is_array($res))
+            {
+                $responseCode = StatusCodes::OK;
+                $responseContent = $res;
+            }
+            else
+                $responseCode = $res;
+            break;
+        case "GetEditorsByLocation":
+            $location = getParameter("localita", true);
+            $res = GetEditorsByLocation($location);
+            if(is_array($res))
+            {
+                $responseCode = StatusCodes::OK;
+                $responseContent = $res;
+            }
+            else
+                $responseCode = $res;
+            break;
+        case "GetComuniConEditors":
+            $res = GetComuniConEditors();
+            if(is_array($res))
+            {
+                $responseCode = StatusCodes::OK;
+                $responseContent = $res;
+            }
+            else
+                $responseCode = $res;
+            break;
+        case "GetAllMyNewsFrom":
+            if(isLogged(true))
+            {
+                $from = getParameter("lastId");
+                $res = GetAllMyNewsFrom($from);
+                if(is_array($res))
+                {
+                    $responseCode = StatusCodes::OK;
+                    $responseContent = $res;
+                }
+                else
+                    $responseCode = $res;
+            }
+            break;
         default:
             $responseCode = StatusCodes::METODO_ASSENTE;
             break;
@@ -166,6 +233,12 @@
                 {
                     DeleteEditor($idEditor);
                     $result = StatusCodes::EDITOR_IMPOSSIBILE_ASSEGNARE_AMMINISTRATORE;
+                }
+                else 
+                {
+                    if($categoria == 'Comune')
+                        AutoFollowComune($idEditor, $localita);
+                    AutoFollowSuperReader($idEditor);
                 }
             }
 			$st->close();
@@ -316,7 +389,7 @@
     function UnfollowEditor($idEditor)
     {
         $idUtente = getIdUtenteFromSession();
-        $query = "DELETE FROM editor_follow WHERE id_utente = ? AND id_editor = ?";
+        $query = "DELETE FROM editor_follow WHERE id_utente = ? AND id_editor = ? AND cancellabile = 1";
         $result = StatusCodes::FAIL;
         $dbConn = dbConnect();
         if($st = $dbConn->prepare($query))
@@ -408,6 +481,7 @@
     {
         $idUtente = getIdUtenteFromSession();
         $query = "INSERT INTO news_editor_letta (id_utente, id_news) VALUES (?,?)";
+        $dbConn = dbConnect();
         $result = StatusCodes::FAIL;
         if($st = $dbConn->prepare($query))
         {
@@ -448,10 +522,216 @@
         dbClose($dbConn);
         return $result;
     }
+    //TODO: DA VERIFICARE SE BISOGNA ESEGUIRLO QUANDO VIENE APPROVATO L'EDITOR
+    function AutoFollowComune($idEditor, $loc)
+    {
+        $query = "INSERT INTO editor_follow (id_utente, id_editor,cancellabile) SELECT id, $idEditor AS id_editor, 0 AS cancellabile FROM utente WHERE comune_residenza = ?";
+        $result = StatusCodes::FAIL;
+        $dbConn = dbConnect();
+        if($st= $dbConn->prepare($query))
+        {
+            $st->bind_param("s", $loc);
+            $result = $st->execute() ? StatusCodes::OK : StatusCodes::FAIL;
+            $st->close();
+        }
+        dbClose($dbConn);
+        return $result;
+    }
+    function AutoFollowSuperReader($idEditor)
+    {
+        $idSuperReader = SUPER_READER_ID;
+        $query = "INSERT INTO editor_follow (id_utente, id_editor) VALUES ($idSuperReader,$idEditor)";
+        $result = StatusCodes::FAIL;
+        $dbConn = dbConnect();
+        if($st= $dbConn->prepare($query))
+        {
+            $result = $st->execute() ? StatusCodes::OK : StatusCodes::FAIL;
+            $st->close();
+        }
+        dbClose($dbConn);
+        return $result;
+    }
+    function GetEditorsByLocation($location)
+    {
+        $query = "SELECT id,nome,categoria FROM editor WHERE localita = ?";
+        $result = StatusCodes::FAIL;
+        $dbConn = dbConnect();
+        if($st = $dbConn->prepare($query))
+        {
+            $st->bind_param("s",$location);
+            if($st->execute())
+            {
+                $st->bind_result($editorId,$editorNome,$editorCategoria);
+                $result = array();
+                while($st->fetch())
+                {
+                    $editor = array("editorId"=>$editorId,
+                        "editorNome" => $editorNome,
+                        "editorCategoria" => $editorCategoria);
+                    array_push($result, $editor);
+                }
+            }
+        }
+        dbClose($dbConn);
+        return $result;
+    }
+    function GetComuniConEditors()
+    {
+        $query = "SELECT istat, comune FROM comune WHERE istat IN (SELECT DISTINCT localita FROM editor) ORDER BY comune";
+        $result = StatusCodes::FAIL;
+        $dbConn = dbConnect();
+        if($st = $dbConn->prepare($query))
+        {
+            if($st->execute())
+            {
+                $st->bind_result($istat, $nomeComune);
+                $result = array();
+                while($st-fetch())
+                {
+                    $comune = array("id"=>$istat, "comune"=>$nomeComune);
+                    array_push($result, $comune);
+                }
+            }
+            $st->close();
+        }
+        dbClose($dbConn);
+        return $result;
+    }
+    function GetNewsDaTuttiGliEditor($idStart = NULL)
+    {
+        $query = $idStart == NULL ?
+                "SELECT e.id, e.nome,n.id,n.titolo,n.corpo,n.data,n.immagine,n.posizione FROM news_editor AS n JOIN editor AS e ON n.pubblicataDaEditor=e.id WHERE e.approvato = 1 ORDER BY n.data DESC LIMIT 50" :
+                "SELECT e.id, e.nome,n.id,n.titolo,n.corpo,n.data,n.immagine,n.posizione FROM news_editor AS n JOIN editor AS e ON n.pubblicataDaEditor=e.id WHERE e.approvato = 1 AND n.id < $idStart ORDER BY n.data DESC LIMIT 50";
+        $dbConn = dbConnect();
+        $result = StatusCodes::FAIL;
+        if($st = $dbConn->prepare($query))
+        {
+            if($st->execute())
+            {
+                $st->bind_result($editorId,$editorNome, $newsId, $newsTitolo, $newsCorpo, $newsData, $newsImmagine, $newsPosizione);
+                $result = array();
+                while($st->fetch())
+                {
+                    $news = array("editorId"=>$editorId,
+                        "editorNome" => $editorNome,
+                        "newsId" => $newsId,
+                        "titolo" => $newsTitolo,
+                        //"corpo" => $newsCorpo,
+                        "data" => $newsData,
+                        "immagine" => $newsImmagine,
+                        "posizione" => $newsPosizione);
+                    array_push($result, $news);
+                }
+            }
+            $st->close();
+        }
+        dbClose($dbConn);
+        return $result;
+    }
+    function AddDescrizioneEditor($idEditor, $descrizione)
+    {
+        if(VerificaAutorizzatoAModificareEditor($idEditor))
+        {
+            $query = "UPDATE editor SET descrizione = ? WHERE id = ?";
+            $result = StatusCodes::FAIL;
+            $dbConn = dbConnect();
+            if($st = $dbConn->prepare($query))
+            {
+                $st->bind_param("si", $descrizione, $idEditor);
+                $result = $st->execute() ? StatusCodes::OK : StatusCodes::FAIL;
+                $st->close();
+            }
+            dbClose($dbConn);
+            return $result;
+        }
+        else
+        {
+            return StatusCodes::EDITOR_UTENTE_NON_AUTORIZZATO;
+        }
+    }
+    function AddImmagineEditor($idEditor, $immagine)
+    {
+        $image_path = SalvaImmagine($immagine, "editors");
+        if(VerificaAutorizzatoAModificareEditor($idEditor))
+        {
+            $query = "UPDATE editor SET immagine = ? WHERE id = ?";
+            $result = StatusCodes::FAIL;
+            $dbConn = dbConnect();
+            if($st = $dbConn->prepare($query))
+            {
+                $st->bind_param("si", $image_path, $idEditor);
+                $result = $st->execute() ? StatusCodes::OK : StatusCodes::FAIL;
+                $st->close();
+            }
+            dbClose($dbConn);
+            return $result;
+        }
+        else
+        {
+            return StatusCodes::EDITOR_UTENTE_NON_AUTORIZZATO;
+        }
+    }
+    function GetAllMyNewsFrom($lastId = NULL)
+    {
+        $idUtente = getIdUtenteFromSession();
+        $query = $lastId == NULL ?
+                 "SELECT e.id,e.nome,n.id,n.titolo,n.corpo,n.data,n.immagine,n.posizione, (SELECT COUNT(*) FROM news_editor_letta WHERE id_utente = ? AND id_news=n.id) AS letta FROM editor AS e JOIN editor_follow AS ef JOIN news_editor AS n ON ef.id_editor=e.id AND ef.id_editor=n.pubblicataDaEditor WHERE ef.id_utente = ? ORDER BY n.data ASC LIMIT 10" :
+                 "SELECT e.id,e.nome,n.id,n.titolo,n.corpo,n.data,n.immagine,n.posizione, (SELECT COUNT(*) FROM news_editor_letta WHERE id_utente = ? AND id_news=n.id) AS letta FROM editor AS e JOIN editor_follow AS ef JOIN news_editor AS n ON ef.id_editor=e.id AND ef.id_editor=n.pubblicataDaEditor WHERE ef.id_utente = ? AND n.id < ? ORDER BY n.data ASC LIMIT 10";
+        $result = StatusCodes::FAIL;
+        $dbConn = dbConnect();
+        if($st = $dbConn->prepare($query))
+        {
+            $lastId == NULL ? $st->bind_param("ii", $idUtente,$idUtente) : $st->bind_param("iii", $idUtente,$idUtente,$from);
+            $result = $st->execute() ? StatusCodes::OK : StatusCodes::FAIL;
+            if($result == StatusCodes::OK)
+            {
+                $st->bind_result($enteId,$enteNome, $newsId,$newsTitolo,$newsCorpo,$newsData,$newsImmagine,$newsPosizione,$newsLetta);
+                $result = array();
+                while($st->fetch())
+                {
+                    $news = array(
+                        "editorId"=>$enteId,
+                        "editorNome"=>$enteNome,
+                        "newsId"=>$newsId,
+                        "titolo"=>$newsTitolo,
+                        "corpo"=>$newsCorpo,
+                        "data"=>$newsData,
+                        "immagine"=>$newsImmagine,
+                        "posizione"=>$newsPosizione,
+                        "letta"=>$newsLetta
+                    );
+                    array_push($result, $news);
+                }
+            }
+            $st->close();
+        }
+        dbClose($dbConn);
+        return $result;
+    }
     function VerificaAutorizzazioneAPostare($idEditor)
     {
         $idUtente = getIdUtenteFromSession();
         $query = "SELECT eg.ruolo FROM editor_gestione AS eg JOIN editor AS e ON e.id=eg.id_editor WHERE eg.id_utente = ? AND eg.id_editor = ? AND e.approvato = 1";
+        $result = StatusCodes::FAIL;
+        $dbConn = dbConnect();
+        if($st = $dbConn->prepare($query))
+        {
+            $st->bind_param("ii", $idUtente,$idEditor);
+            $result = $st->execute() ? StatusCodes::OK : StatusCodes::FAIL;
+            if($result == StatusCodes::OK)
+            {
+                $st->bind_result($ruolo);
+                $result = $st->fetch() ? StatusCodes::OK : StatusCodes::EDITOR_UTENTE_NON_AUTORIZZATO;
+            }
+            $st->close();
+        }
+        dbClose($dbConn);
+        return $result;
+    }
+    function VerificaAutorizzatoAModificareEditor($idEditor)
+    {
+        $idUtente = getIdUtenteFromSession();
+        $query = "SELECT eg.ruolo FROM editor_gestione AS eg JOIN editor AS e ON e.id=eg.id_editor WHERE eg.id_utente = ? AND eg.id_editor = ? AND e.approvato = 1 AND eg.ruolo ='admin'";
         $result = StatusCodes::FAIL;
         $dbConn = dbConnect();
         if($st = $dbConn->prepare($query))

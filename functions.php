@@ -44,7 +44,7 @@
     function sendResponse($response, $content = "")
     {
         $array = array('response' => $response, 
-                       'time' => time(),
+                       'time' => date(),
                        'content' => $content);
         header('Content-Type: application/json');
         echo json_encode($array);
@@ -86,7 +86,7 @@
         return false;
     }
     //ritorna percorso salvataggio immagine
-    function SalvaImmagine($immagine)
+    function SalvaImmagine($immagine, $folder = "images")
     {
         if($immagine==NULL)
             return NULL;

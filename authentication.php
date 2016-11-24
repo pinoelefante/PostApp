@@ -24,15 +24,20 @@
 			$responseCode = RegisterUser($code, $localita, $mail);
 			if($responseCode == StatusCodes::OK)
 			{
-				//Login
 				Access($code);
-				//Registra al comune di residenza
 				RegistraComuneResidenza($localita);
 			}
 			break;
 		case "Access":
 			$code = getParameter("code", true);
 			$responseCode = Access($code);
+			break;
+		case "CambiaLocalita":
+			//TODO: cambia localita di residenza dell'utente
+			break;
+		case "RipristinaUtente":
+			//TODO: cancellare utente corrente
+			//		effettuare accesso con nuovo utente
 			break;
         default:
             $responseCode = StatusCodes::METODO_ASSENTE;
