@@ -92,4 +92,26 @@
             return NULL;
         //TODO: salvataggio immagine su disco
     }
+    function hashPassword($password)
+    {
+        $options = [
+            'cost' => 10,
+        ];
+        return password_hash($password, PASSWORD_BCRYPT, $options);
+    }
+    function costTimeHashPassword($timeTarget = 0.05 /*50ms*/)
+    {
+        if($timeTarget == NULL)
+            $timeTarget = 0.05;
+
+        $cost = 5;
+        do {
+            $cost++;
+            $start = microtime(true);
+            password_hash("testtest", PASSWORD_BCRYPT, ["cost" => $cost]);
+            $end = microtime(true);
+        } while (($end - $start) < $timeTarget);
+
+        return $cost;
+    }
 ?>

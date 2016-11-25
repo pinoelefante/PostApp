@@ -229,7 +229,7 @@
             {
                 $idEditor = $dbConn->insert_id;
                 $idUtente = getIdUtenteFromSession();
-                if(!PartecipaEditor($idEditor, $idUtente, "admin"))
+                if(PartecipaEditor($idEditor, $idUtente, "admin")!=StatusCodes::OK)
                 {
                     DeleteEditor($idEditor);
                     $result = StatusCodes::EDITOR_IMPOSSIBILE_ASSEGNARE_AMMINISTRATORE;
@@ -269,7 +269,7 @@
         if($st = $dbConn->prepare($query))
         {
             $st->bind_param("i", $idEditor);
-            $result = $st->execute() ? StatusCodes::OK : StatusCodes::FAIL;
+            $result = $st->execute() && $dbConn->affected_rows>0 ? StatusCodes::OK : StatusCodes::FAIL;
             $st->close();
         }
         dbClose($dbConn);
@@ -396,7 +396,7 @@
         {
             $st->bind_param("ii", $idUtente,$idEditor);
             $st->execute();
-            $result = StatusCodes::OK;
+            $result = $dbConn->affected_rows > 0 ? StatusCodes::OK : StatusCodes::EDITOR_NON_SEGUITO;
             $st->close();
         }
         dbClose($dbConn);
@@ -449,7 +449,7 @@
     }
     function GetNews($idNews)
     {
-        $query = "SELECT ed.id, ed.nome,n.id,n.titolo,n.corpo,n.data,n.immagine,n.posizione FROM editor AS ed JOIN news_editor AS n ON ed.id=n.pubblicataDaEditor WHERE n.id=?";
+        $query = "SELECT ed.id, ed.nome,n.id,n.titolo,n.corpo,n.data,n.immagine,n.posizione, (SELECT COUNT(*) FROM news_editor_thankyou WHERE id_news=n.id) AS thankyou FROM editor AS ed JOIN news_editor AS n ON ed.id=n.pubblicataDaEditor WHERE n.id=?";
         $dbConn = dbConnect();
         $result = StatusCodes::FAIL;
         if($st = $dbConn->prepare($query))
@@ -457,7 +457,7 @@
             $st->bind_param("i", $idNews);
             if($st->execute())
             {
-                $st->bind_result($editorId,$editorNome, $newsId, $newsTitolo, $newsCorpo, $newsData, $newsImmagine, $newsPosizione);
+                $st->bind_result($editorId,$editorNome, $newsId, $newsTitolo, $newsCorpo, $newsData, $newsImmagine, $newsPosizione,$thanks);
                 if($st->fetch())
                 {
                     $result = array("editorId"=>$editorId,
@@ -467,7 +467,8 @@
                         "corpo" => $newsCorpo,
                         "data" => $newsData,
                         "immagine" => $newsImmagine,
-                        "posizione" => $newsPosizione);
+                        "posizione" => $newsPosizione,
+                        "thankyou" => $thanks);
                 }
                 else
                     $result = StatusCodes::EDITOR_NEWS_NON_TROVATA;

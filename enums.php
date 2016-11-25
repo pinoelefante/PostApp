@@ -20,6 +20,16 @@
         const EDITOR_NEWS_GIA_RINGRAZIATO = 54;
         const EDITOR_NEWS_NON_TROVATA = 55;
         const EDITOR_NEWS_GIA_LETTA = 56;
+        const EDITOR_NON_SEGUITO = 57;
+
+        const SCUOLA_IMPOSSIBILE_ASSEGNARE_PRESIDE = 60;
+        const SCUOLA_USERNAME_NON_VALIDO = 61;
+        const SCUOLA_PASSWORD_ERRATA = 62;
+        const SCUOLA_PERMESSI_INSUFFICIENTI = 63;
+        const SCUOLA_PLESSO_DUPLICATO = 64;
+        const SCUOLA_PLESSO_NON_PRESENTE = 65;
+        const SCUOLA_GRADO_DUPLICATO = 66;
+        const SCUOLA_ERRORE_INSERIMENTO_SEZIONE = 67;
     }
     abstract class CategorieEnum extends BasicEnum
     {

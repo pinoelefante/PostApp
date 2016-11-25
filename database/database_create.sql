@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS `comune` (
 -- L’esportazione dei dati non era selezionata.
 -- Dump della struttura di tabella postapp.comune_follow
 CREATE TABLE IF NOT EXISTS `comune_follow` (
-  `id_utente` int(11) UNSIGNED NOT NULL,
+  `id_utente` int(11) unsigned NOT NULL,
   `comune` varchar(7) NOT NULL,
   PRIMARY KEY (`id_utente`,`comune`),
   KEY `FK_comune_follow_comune` (`comune`),
@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS `comune_follow` (
 -- L’esportazione dei dati non era selezionata.
 -- Dump della struttura di tabella postapp.editor
 CREATE TABLE IF NOT EXISTS `editor` (
-  `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `nome` varchar(64) NOT NULL,
   `categoria` varchar(16) NOT NULL,
   `email` varchar(128) NOT NULL,
@@ -62,8 +62,8 @@ CREATE TABLE IF NOT EXISTS `editor` (
 -- L’esportazione dei dati non era selezionata.
 -- Dump della struttura di tabella postapp.editor_follow
 CREATE TABLE IF NOT EXISTS `editor_follow` (
-  `id_utente` int(11) UNSIGNED NOT NULL,
-  `id_editor` int(11) UNSIGNED NOT NULL,
+  `id_utente` int(11) unsigned NOT NULL,
+  `id_editor` int(11) unsigned NOT NULL,
   `cancellabile` bit(1) NOT NULL DEFAULT b'1',
   PRIMARY KEY (`id_utente`,`id_editor`),
   KEY `FK_editor_follow_editor` (`id_editor`),
@@ -74,8 +74,8 @@ CREATE TABLE IF NOT EXISTS `editor_follow` (
 -- L’esportazione dei dati non era selezionata.
 -- Dump della struttura di tabella postapp.editor_gestione
 CREATE TABLE IF NOT EXISTS `editor_gestione` (
-  `id_utente` int(11) UNSIGNED NOT NULL,
-  `id_editor` int(11) UNSIGNED NOT NULL,
+  `id_utente` int(11) unsigned NOT NULL,
+  `id_editor` int(11) unsigned NOT NULL,
   `ruolo` varchar(8) NOT NULL,
   PRIMARY KEY (`id_utente`,`id_editor`),
   KEY `FK_editor_gestione_editor` (`id_editor`),
@@ -86,9 +86,9 @@ CREATE TABLE IF NOT EXISTS `editor_gestione` (
 -- L’esportazione dei dati non era selezionata.
 -- Dump della struttura di tabella postapp.news_editor
 CREATE TABLE IF NOT EXISTS `news_editor` (
-  `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
-  `pubblicataDaEditor` int(11) UNSIGNED NOT NULL,
-  `pubblicataDaUtente` int(11) UNSIGNED DEFAULT NULL,
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `pubblicataDaEditor` int(11) unsigned NOT NULL,
+  `pubblicataDaUtente` int(11) unsigned DEFAULT NULL,
   `data` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `titolo` varchar(64) NOT NULL,
   `corpo` text NOT NULL,
@@ -105,8 +105,8 @@ CREATE TABLE IF NOT EXISTS `news_editor` (
 -- L’esportazione dei dati non era selezionata.
 -- Dump della struttura di tabella postapp.news_editor_letta
 CREATE TABLE IF NOT EXISTS `news_editor_letta` (
-  `id_utente` int(11) UNSIGNED NOT NULL,
-  `id_news` int(11) UNSIGNED NOT NULL,
+  `id_utente` int(11) unsigned NOT NULL,
+  `id_news` int(11) unsigned NOT NULL,
   PRIMARY KEY (`id_utente`,`id_news`),
   KEY `FK_news_letta_news` (`id_news`),
   CONSTRAINT `FK_news_letta_news` FOREIGN KEY (`id_news`) REFERENCES `news_editor` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
@@ -116,8 +116,8 @@ CREATE TABLE IF NOT EXISTS `news_editor_letta` (
 -- L’esportazione dei dati non era selezionata.
 -- Dump della struttura di tabella postapp.news_editor_thankyou
 CREATE TABLE IF NOT EXISTS `news_editor_thankyou` (
-  `id_utente` int(11) UNSIGNED NOT NULL,
-  `id_news` int(11) UNSIGNED NOT NULL,
+  `id_utente` int(11) unsigned NOT NULL,
+  `id_news` int(11) unsigned NOT NULL,
   PRIMARY KEY (`id_utente`,`id_news`),
   KEY `FK_news_thankyou_news` (`id_news`),
   CONSTRAINT `FK_news_thankyou_news` FOREIGN KEY (`id_news`) REFERENCES `news_editor` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
@@ -127,9 +127,9 @@ CREATE TABLE IF NOT EXISTS `news_editor_thankyou` (
 -- L’esportazione dei dati non era selezionata.
 -- Dump della struttura di tabella postapp.news_scuola
 CREATE TABLE IF NOT EXISTS `news_scuola` (
-  `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
-  `pubblicataDaScuola` int(11) UNSIGNED NOT NULL,
-  `pubblicataDaUtente` int(11) UNSIGNED DEFAULT NULL,
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `pubblicataDaScuola` int(11) unsigned NOT NULL,
+  `pubblicataDaUtente` int(11) unsigned DEFAULT NULL,
   `titolo` varchar(64) NOT NULL,
   `corpo` text NOT NULL,
   `immagine` varchar(20) DEFAULT NULL,
@@ -144,22 +144,33 @@ CREATE TABLE IF NOT EXISTS `news_scuola` (
 -- L’esportazione dei dati non era selezionata.
 -- Dump della struttura di tabella postapp.news_scuola_classe
 CREATE TABLE IF NOT EXISTS `news_scuola_classe` (
-  `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
-  `pubblicataDaClasse` int(11) UNSIGNED NOT NULL,
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `pubblicataDaScuola` int(11) unsigned NOT NULL,
+  `pubblicataDaUtente` int(11) unsigned DEFAULT NULL,
   `titolo` varchar(64) NOT NULL,
   `corpo` text NOT NULL,
   `immagine` varchar(20) DEFAULT NULL,
   `data` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  KEY `FK_news_scuola_classe_scuola_classe` (`pubblicataDaClasse`),
-  CONSTRAINT `FK_news_scuola_classe_scuola_classe` FOREIGN KEY (`pubblicataDaClasse`) REFERENCES `scuola_classe` (`id_classe`) ON DELETE CASCADE ON UPDATE CASCADE
+  KEY `FK_news_scuola_classe_scuola` (`pubblicataDaScuola`),
+  KEY `FK_news_scuola_classe_utente` (`pubblicataDaUtente`),
+  CONSTRAINT `FK_news_scuola_classe_scuola` FOREIGN KEY (`pubblicataDaScuola`) REFERENCES `scuola` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `FK_news_scuola_classe_utente` FOREIGN KEY (`pubblicataDaUtente`) REFERENCES `utente` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+-- L’esportazione dei dati non era selezionata.
+-- Dump della struttura di tabella postapp.news_scuola_classe_destinatario
+CREATE TABLE IF NOT EXISTS `news_scuola_classe_destinatario` (
+  `id_news` int(11) NOT NULL,
+  `id_classe` int(11) NOT NULL,
+  PRIMARY KEY (`id_news`,`id_classe`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- L’esportazione dei dati non era selezionata.
 -- Dump della struttura di tabella postapp.news_scuola_classe_letta
 CREATE TABLE IF NOT EXISTS `news_scuola_classe_letta` (
-  `id_news` int(11) UNSIGNED NOT NULL,
-  `id_utente` int(11) UNSIGNED NOT NULL,
+  `id_news` int(11) unsigned NOT NULL,
+  `id_utente` int(11) unsigned NOT NULL,
   PRIMARY KEY (`id_news`,`id_utente`),
   KEY `FK_news_scuola_classe_letta_utente` (`id_utente`),
   CONSTRAINT `FK_news_scuola_classe_letta_news_scuola_classe` FOREIGN KEY (`id_news`) REFERENCES `news_scuola_classe` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
@@ -169,8 +180,8 @@ CREATE TABLE IF NOT EXISTS `news_scuola_classe_letta` (
 -- L’esportazione dei dati non era selezionata.
 -- Dump della struttura di tabella postapp.news_scuola_classe_thankyou
 CREATE TABLE IF NOT EXISTS `news_scuola_classe_thankyou` (
-  `id_news` int(11) UNSIGNED NOT NULL,
-  `id_utente` int(11) UNSIGNED NOT NULL,
+  `id_news` int(11) unsigned NOT NULL,
+  `id_utente` int(11) unsigned NOT NULL,
   PRIMARY KEY (`id_news`,`id_utente`),
   KEY `FK_news_scuola_classe_thankyou_utente` (`id_utente`),
   CONSTRAINT `FK_news_scuola_classe_thankyou_news_scuola_classe` FOREIGN KEY (`id_news`) REFERENCES `news_scuola_classe` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
@@ -180,8 +191,8 @@ CREATE TABLE IF NOT EXISTS `news_scuola_classe_thankyou` (
 -- L’esportazione dei dati non era selezionata.
 -- Dump della struttura di tabella postapp.news_scuola_letta
 CREATE TABLE IF NOT EXISTS `news_scuola_letta` (
-  `id_news` int(11) UNSIGNED NOT NULL,
-  `id_utente` int(11) UNSIGNED NOT NULL,
+  `id_news` int(11) unsigned NOT NULL,
+  `id_utente` int(11) unsigned NOT NULL,
   PRIMARY KEY (`id_news`,`id_utente`),
   KEY `FK_news_scuola_letta_utente` (`id_utente`),
   CONSTRAINT `FK_news_scuola_letta_news_scuola` FOREIGN KEY (`id_news`) REFERENCES `news_scuola` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
@@ -191,8 +202,8 @@ CREATE TABLE IF NOT EXISTS `news_scuola_letta` (
 -- L’esportazione dei dati non era selezionata.
 -- Dump della struttura di tabella postapp.news_scuola_thankyou
 CREATE TABLE IF NOT EXISTS `news_scuola_thankyou` (
-  `id_utente` int(11) UNSIGNED NOT NULL,
-  `id_news` int(11) UNSIGNED NOT NULL,
+  `id_utente` int(11) unsigned NOT NULL,
+  `id_news` int(11) unsigned NOT NULL,
   PRIMARY KEY (`id_utente`,`id_news`),
   KEY `FK_news_scuola_thankyou_news_scuola` (`id_news`),
   CONSTRAINT `FK_news_scuola_thankyou_news_scuola` FOREIGN KEY (`id_news`) REFERENCES `news_scuola` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
@@ -202,7 +213,7 @@ CREATE TABLE IF NOT EXISTS `news_scuola_thankyou` (
 -- L’esportazione dei dati non era selezionata.
 -- Dump della struttura di tabella postapp.scuola
 CREATE TABLE IF NOT EXISTS `scuola` (
-  `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `nome` varchar(50) NOT NULL,
   `localita` varchar(7) NOT NULL,
   `telefono` varchar(15) NOT NULL,
@@ -219,13 +230,14 @@ CREATE TABLE IF NOT EXISTS `scuola` (
 -- L’esportazione dei dati non era selezionata.
 -- Dump della struttura di tabella postapp.scuola_classe
 CREATE TABLE IF NOT EXISTS `scuola_classe` (
-  `id_classe` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `id_classe` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `classe` tinyint(4) NOT NULL,
   `sezione` varchar(2) NOT NULL,
-  `id_scuola` int(11) UNSIGNED NOT NULL,
-  `id_plesso` int(11) UNSIGNED,
-  `id_grado` int(11) UNSIGNED NOT NULL,
+  `id_scuola` int(11) unsigned NOT NULL,
+  `id_plesso` int(11) unsigned DEFAULT NULL,
+  `id_grado` int(11) unsigned NOT NULL,
   PRIMARY KEY (`id_classe`),
+  UNIQUE KEY `classe_sezione_id_scuola_id_plesso_id_grado` (`classe`,`sezione`,`id_scuola`,`id_plesso`,`id_grado`),
   KEY `FK_scuola_classe_scuola` (`id_scuola`),
   KEY `FK_scuola_classe_scuola_plesso` (`id_plesso`),
   KEY `FK_scuola_classe_scuola_grado` (`id_grado`),
@@ -237,8 +249,8 @@ CREATE TABLE IF NOT EXISTS `scuola_classe` (
 -- L’esportazione dei dati non era selezionata.
 -- Dump della struttura di tabella postapp.scuola_classe_follow
 CREATE TABLE IF NOT EXISTS `scuola_classe_follow` (
-  `id_utente` int(11) UNSIGNED NOT NULL,
-  `id_classe` int(11) UNSIGNED NOT NULL,
+  `id_utente` int(11) unsigned NOT NULL,
+  `id_classe` int(11) unsigned NOT NULL,
   `ruolo` varchar(3) NOT NULL,
   PRIMARY KEY (`id_utente`,`id_classe`,`ruolo`),
   KEY `FK_scuola_classe_follow_scuola_classe` (`id_classe`),
@@ -249,11 +261,11 @@ CREATE TABLE IF NOT EXISTS `scuola_classe_follow` (
 -- L’esportazione dei dati non era selezionata.
 -- Dump della struttura di tabella postapp.scuola_codice_famiglia
 CREATE TABLE IF NOT EXISTS `scuola_codice_famiglia` (
-  `id_codice` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `id_codice` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `codice_genitore` varchar(17) NOT NULL,
   `codice_studente` varchar(17) NOT NULL,
-  `id_scuola` int(11) UNSIGNED NOT NULL,
-  `id_classe` int(11) UNSIGNED NOT NULL,
+  `id_scuola` int(11) unsigned NOT NULL,
+  `id_classe` int(11) unsigned NOT NULL,
   `alunno_nome` varchar(20) NOT NULL,
   `alunno_cognome` varchar(20) NOT NULL,
   PRIMARY KEY (`id_codice`),
@@ -268,8 +280,8 @@ CREATE TABLE IF NOT EXISTS `scuola_codice_famiglia` (
 -- L’esportazione dei dati non era selezionata.
 -- Dump della struttura di tabella postapp.scuola_codice_famiglia_uso
 CREATE TABLE IF NOT EXISTS `scuola_codice_famiglia_uso` (
-  `id_utente` int(11) UNSIGNED NOT NULL,
-  `id_codice` int(11) UNSIGNED NOT NULL,
+  `id_utente` int(11) unsigned NOT NULL,
+  `id_codice` int(11) unsigned NOT NULL,
   PRIMARY KEY (`id_utente`,`id_codice`),
   KEY `FK_scuola_codice_uso_scuola_codice` (`id_codice`),
   CONSTRAINT `FK_scuola_codice_uso_scuola_codice` FOREIGN KEY (`id_codice`) REFERENCES `scuola_codice_famiglia` (`id_codice`) ON DELETE CASCADE ON UPDATE CASCADE,
@@ -279,8 +291,8 @@ CREATE TABLE IF NOT EXISTS `scuola_codice_famiglia_uso` (
 -- L’esportazione dei dati non era selezionata.
 -- Dump della struttura di tabella postapp.scuola_follow
 CREATE TABLE IF NOT EXISTS `scuola_follow` (
-  `id_utente` int(11) UNSIGNED NOT NULL,
-  `id_scuola` int(11) UNSIGNED NOT NULL,
+  `id_utente` int(11) unsigned NOT NULL,
+  `id_scuola` int(11) unsigned NOT NULL,
   PRIMARY KEY (`id_utente`,`id_scuola`),
   KEY `FK_scuola_follow_scuola` (`id_scuola`),
   CONSTRAINT `FK_scuola_follow_scuola` FOREIGN KEY (`id_scuola`) REFERENCES `scuola` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
@@ -290,11 +302,13 @@ CREATE TABLE IF NOT EXISTS `scuola_follow` (
 -- L’esportazione dei dati non era selezionata.
 -- Dump della struttura di tabella postapp.scuola_gestione
 CREATE TABLE IF NOT EXISTS `scuola_gestione` (
-  `id_utente` int(11) UNSIGNED NOT NULL,
-  `id_scuola` int(11) UNSIGNED NOT NULL,
+  `id_utente` int(11) unsigned NOT NULL,
+  `id_scuola` int(11) unsigned NOT NULL,
   `username` varchar(20) NOT NULL,
   `password` varchar(60) NOT NULL,
   `ruolo` varchar(20) NOT NULL DEFAULT 'editor',
+  `nome` varchar(20) DEFAULT NULL,
+  `cognome` varchar(20) DEFAULT NULL,
   PRIMARY KEY (`id_utente`,`id_scuola`),
   UNIQUE KEY `username` (`username`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
@@ -302,8 +316,8 @@ CREATE TABLE IF NOT EXISTS `scuola_gestione` (
 -- L’esportazione dei dati non era selezionata.
 -- Dump della struttura di tabella postapp.scuola_grado
 CREATE TABLE IF NOT EXISTS `scuola_grado` (
-  `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
-  `id_scuola` int(11) UNSIGNED NOT NULL,
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `id_scuola` int(11) unsigned NOT NULL,
   `grado` varchar(12) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `id_scuola_grado` (`id_scuola`,`grado`),
@@ -313,10 +327,11 @@ CREATE TABLE IF NOT EXISTS `scuola_grado` (
 -- L’esportazione dei dati non era selezionata.
 -- Dump della struttura di tabella postapp.scuola_plesso
 CREATE TABLE IF NOT EXISTS `scuola_plesso` (
-  `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
-  `id_scuola` int(11) UNSIGNED NOT NULL,
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `id_scuola` int(11) unsigned NOT NULL,
   `nome_plesso` varchar(20) NOT NULL,
   PRIMARY KEY (`id`),
+  UNIQUE KEY `id_scuola_nome_plesso` (`id_scuola`,`nome_plesso`),
   KEY `FK_scuola_plesso_scuola` (`id_scuola`),
   CONSTRAINT `FK_scuola_plesso_scuola` FOREIGN KEY (`id_scuola`) REFERENCES `scuola` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
@@ -324,7 +339,7 @@ CREATE TABLE IF NOT EXISTS `scuola_plesso` (
 -- L’esportazione dei dati non era selezionata.
 -- Dump della struttura di tabella postapp.utente
 CREATE TABLE IF NOT EXISTS `utente` (
-  `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `codice_utente` varchar(17) NOT NULL,
   `comune_residenza` varchar(7) DEFAULT NULL,
   `email` varchar(64) DEFAULT NULL,
