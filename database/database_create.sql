@@ -214,7 +214,7 @@ CREATE TABLE IF NOT EXISTS `news_scuola_thankyou` (
 -- Dump della struttura di tabella postapp.scuola
 CREATE TABLE IF NOT EXISTS `scuola` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-  `nome` varchar(50) NOT NULL,
+  `nome` varchar(80) NOT NULL,
   `localita` varchar(7) NOT NULL,
   `telefono` varchar(15) NOT NULL,
   `email` varchar(128) NOT NULL,

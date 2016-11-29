@@ -30,6 +30,8 @@
         const SCUOLA_PLESSO_NON_PRESENTE = 65;
         const SCUOLA_GRADO_DUPLICATO = 66;
         const SCUOLA_ERRORE_INSERIMENTO_SEZIONE = 67;
+
+        const NEWS_COMMON_TIPO_NEWS_INVALIDO = 80;
     }
     abstract class CategorieEnum extends BasicEnum
     {
@@ -43,7 +45,7 @@
 
         public static function getConstants() {
             if (self::$constCacheArray == NULL) {
-                self::$constCacheArray = [];
+                self::$constCacheArray = array();
             }
             $calledClass = get_called_class();
             if (!array_key_exists($calledClass, self::$constCacheArray)) {

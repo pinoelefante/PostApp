@@ -3,6 +3,7 @@
     
     require_once("enums.php");
     require_once("functions.php");
+    require_once("news_common.php");
 
     define('RUOLO_PRESIDE', 'Preside');
     define('RUOLO_SEGRETERIA', 'Segreteria');
@@ -247,13 +248,31 @@
         case "LeggiNewsScuola":
             if(isLogged(true))
             {
-                
+                $idNews = getParameter("idNews",true);
+                $res = LeggiNewsScuola($idNews);
+                if(is_array($res))
+                {
+                    $responseCode = StatusCodes::OK;
+                    $responseContent = $res;
+                    SegnaComeLetta($idNews, "scuola");
+                }
+                else
+                    $responseCode = $res;
             }
             break;
         case "LeggiNewsClasse":
             if(isLogged(true))
             {
-                
+                $idNews = getParameter("idNews",true);
+                $res = LeggiNewsClasse($idNews);
+                if(is_array($res))
+                {
+                    $responseCode = StatusCodes::OK;
+                    $responseContent = $res;
+                    SegnaComeLetta($idNews, "classe");
+                }
+                else
+                    $responseCode = $res;
             }
             break;
         default:
@@ -502,9 +521,67 @@
         dbClose($dbConn);
         return $result;
     }
-    function GetNewsScuola($idScuola)
+    function LeggiNewsScuola($idNews)
     {
-        
+        $query = "SELECT s.id,s.nome,n.id,n.titolo,n.corpo,n.data,n.immagine, (SELECT COUNT(*) FROM news_scuola_thankyou WHERE id_news=n.id) AS thankyou FROM scuola AS s JOIN news_scuola AS n ON s.id=n.pubblicataDaScuola WHERE n.id=?";
+        $dbConn = dbConnect();
+        $result = StatusCodes::FAIL;
+        if($st = $dbConn->prepare($query))
+        {
+            $st->bind_param("i", $idNews);
+            if($st->execute())
+            {
+                $st->bind_result($scuolaId,$scuolaNome,$newsId,$newsTitolo,$newsCorpo,$newsData,$newsImmagine, $newsThankyou);
+                if($st->fetch())
+                {
+                    if(($result = VerificaAutorizzazioneLetturaNewsScuola($scuolaId))==StatusCodes::OK)
+                    {
+                        $result = array("scuolaId"=>$scuolaId,
+                                        "scuolaNome" => $scuolaNome,
+                                        "newsId" => $newsId,
+                                        "titolo" => $newsTitolo,
+                                        "corpo" => $newsCorpo,
+                                        "data" => $newsData,
+                                        "immagine" => $newsImmagine,
+                                        "thankyou" => $newsThankyou);
+                    }
+                }
+            }
+            $st->close();
+        }
+        dbClose($dbConn);
+        return $result;
+    }
+    function LeggiNewsClasse($idNews)
+    {
+        $query = "SELECT news.id As newsId,news.titolo,news.corpo,news.immagine,news.`data`,cl.id_classe as classeId,cl.classe,cl.sezione,s.nome,s.id as scuolaId,pl.id As plessoId,pl.nome_plesso,gr.grado,(SELECT COUNT(*) FROM news_scuola_classe_thankyou WHERE id_news=news.id) AS thankyou FROM news_scuola_classe_destinatario AS dest JOIN news_scuola_classe AS news JOIN scuola_classe AS cl JOIN scuola AS s JOIN scuola_plesso AS pl JOIN scuola_grado AS gr ON cl.id_grado=gr.id AND cl.id_plesso=pl.id AND cl.id_classe=dest.id_classe AND dest.id_news=news.id AND cl.id_scuola=s.id WHERE news.id = ?";
+        $dbConn = dbConnect();
+        $result = StatusCodes::FAIL;
+        if($st = $dbConn->prepare($query))
+        {
+            $st->bind_param("i", $idNews);
+            if($st->execute())
+            {
+                $st->bind_result($newsId,$newsTitolo,$newsCorpo,$newsImmagine,$newsData,$classeId,$classeNum,$classeSezione,$scuolaNome,$scuolaId,$plessoId,$plessoNome,$grado,$thankyou);
+                if($st->fetch())
+                {
+                    if(($result = VerificaAutorizzazioneLetturaNewsClasse($scuolaId))==StatusCodes::OK)
+                    {
+                        $result = array("classeId"=>$classeId,
+                                        "classeNome" => "Classe $classeNum $classeSezione - Scuola $grado $scuolaNome - Plesso $plessoNome",
+                                        "newsId" => $newsId,
+                                        "titolo" => $newsTitolo,
+                                        "corpo" => $newsCorpo,
+                                        "data" => $newsData,
+                                        "immagine" => $newsImmagine,
+                                        "thankyou" => $thankyou);
+                    }
+                }
+            }
+            $st->close();
+        }
+        dbClose($dbConn);
+        return $result;
     }
     function VerificaAutorizzazione($idScuola)
     {
@@ -531,6 +608,43 @@
     }
     function VerificaRuolo($idScuola, $ruolo)
     {
-        return true;
+        if(array_key_exists("auth_scuola_$idScuola",$_SESSION) && $_SESSION["auth_scuola_$idScuola"]==$ruolo)
+            return true;
+        return false;
+    }
+    function VerificaAutorizzazioneLetturaNewsScuola($idScuola)
+    {
+        $idUtente = getIdUtenteFromSession();
+        $query = "SELECT * FROM scuola_follow WHERE id_utente = ? AND id_scuola = ?";
+        $result = StatusCodes::FAIL;
+        $dbConn = dbConnect();
+        if($st = $dbConn->prepare($query))
+        {
+            $st->bind_param("ii",$idUtente,$idScuola);
+            $result = $st->execute() && $st->fetch() ? StatusCodes::OK : StatusCodes::SCUOLA_PERMESSI_INSUFFICIENTI;
+            $st->close();
+        }
+        dbClose($dbConn);
+        return $result;
+    }
+    function VerificaAutorizzazioneLetturaNewsClasse($idNews)
+    {
+        $idUtente = getIdUtenteFromSession();
+        $q = "SELECT COUNT(*) AS access_granted FROM news_scuola_classe_destinatario AS perm JOIN scuola_classe_follow AS foll ON perm.id_classe = foll.id_classe AND perm.ruolo = foll.ruolo WHERE foll.id_utente = ? AND perm.id_news = ?";
+        $result = StatusCodes::FAIL;
+        $dbConn = dbConnect();
+        if($st = $dbConn->prepare($query))
+        {
+            $st->bind_param("ii",$idUtente,$idNews);
+            if($st->execute())
+            {
+                $st->bind_result($access);
+                if($st->fetch())
+                    $result = $access > 0 ? StatusCodes::OK : StatusCodes::SCUOLA_PERMESSI_INSUFFICIENTI;
+            }
+            $st->close();
+        }
+        dbClose($dbConn);
+        return $result;
     }
 ?>

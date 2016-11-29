@@ -44,7 +44,7 @@
     function sendResponse($response, $content = "")
     {
         $array = array('response' => $response, 
-                       'time' => date(),
+                       'time' => date("Y-m-d H:i:s"),
                        'content' => $content);
         header('Content-Type: application/json');
         echo json_encode($array);
@@ -94,9 +94,9 @@
     }
     function hashPassword($password)
     {
-        $options = [
+        $options = array(
             'cost' => 10,
-        ];
+        );
         return password_hash($password, PASSWORD_BCRYPT, $options);
     }
     function costTimeHashPassword($timeTarget = 0.05 /*50ms*/)
@@ -108,7 +108,7 @@
         do {
             $cost++;
             $start = microtime(true);
-            password_hash("testtest", PASSWORD_BCRYPT, ["cost" => $cost]);
+            password_hash("testtest", PASSWORD_BCRYPT, array("cost" => $cost));
             $end = microtime(true);
         } while (($end - $start) < $timeTarget);
 

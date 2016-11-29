@@ -540,17 +540,21 @@
     }
     function AutoFollowSuperReader($idEditor)
     {
-        $idSuperReader = SUPER_READER_ID;
-        $query = "INSERT INTO editor_follow (id_utente, id_editor) VALUES ($idSuperReader,$idEditor)";
-        $result = StatusCodes::FAIL;
-        $dbConn = dbConnect();
-        if($st= $dbConn->prepare($query))
+        if(SUPER_READER_ENABLED)
         {
-            $result = $st->execute() ? StatusCodes::OK : StatusCodes::FAIL;
-            $st->close();
+            $idSuperReader = SUPER_READER_ID;
+            $query = "INSERT INTO editor_follow (id_utente, id_editor) VALUES (?,?)";
+            $result = StatusCodes::FAIL;
+            $dbConn = dbConnect();
+            if($st= $dbConn->prepare($query))
+            {
+                $st->bind_param("ii", $idSuperReader,$idEditor);
+                $result = $st->execute() ? StatusCodes::OK : StatusCodes::FAIL;
+                $st->close();
+            }
+            dbClose($dbConn);
+            return $result;
         }
-        dbClose($dbConn);
-        return $result;
     }
     function GetEditorsByLocation($location)
     {
