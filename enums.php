@@ -4,6 +4,7 @@
         const FAIL = -1;
         const RICHIESTA_MALFORMATA = -2;
         const METODO_ASSENTE = -3;
+        const SQL_FAIL = -4;
         
         const OK = 1;
 

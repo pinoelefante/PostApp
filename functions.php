@@ -7,7 +7,7 @@
         $sessionVer = sessionVerification();
         if($required && !$sessionVer)
         {
-            sendResponse(StatusCodes::NON_LOGGATO, "");
+            sendResponse(StatusCodes::LOGIN_NON_LOGGATO, "");
             exit;
         }
         return $sessionVer;
@@ -45,7 +45,7 @@
     {
         $array = array('response' => $response, 
                        'time' => date("Y-m-d H:i:s"),
-                       'content' => $content);
+                       'content' => empty($content) ? "" : $content );
         header('Content-Type: application/json');
         echo json_encode($array);
     }

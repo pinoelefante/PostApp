@@ -47,6 +47,19 @@
                     $responseCode = $res;
             }
             break;
+        case "GetMieScuoleWriterDaApprovare":
+            if(isLogged(true))
+            {
+                $res = GetMieScuoleWriterDaApprovare();
+                if(is_array($res))
+                {
+                    $responseCode = StatusCodes::OK;
+                    $responseContent = $res;
+                }
+                else
+                    $responseCode = $res;
+            }
+            break; 
         case "GetMieScuoleReader":
             //TODO
             break;
@@ -289,7 +302,7 @@
         if($st = $dbConn->prepare($query))
         {
             $st->bind_param("sssss", $nomeScuola, $localitaScuola,$emailScuola, $telefonoScuola, $indirizzoScuola);
-            $result = $st->execute() ? StatusCodes::OK : StatusCodes::FAIL;
+            $result = $st->execute() ? StatusCodes::OK : StatusCodes::SQL_FAIL;
             if($result == StatusCodes::OK)
             {
                 $idScuola = $dbConn->insert_id;
@@ -335,7 +348,30 @@
     function GetMieScuoleWriter()
     {
         $idUtente = getIdUtenteFromSession();
-        $query = "SELECT s.id,s.nome,sg.ruolo FROM scuola AS s JOIN scuola_gestione AS sg ON s.id=sg.id_scuola WHERE sg.id_utente = ? ORDER BY s.nome ASC";
+        $query = "SELECT s.id,s.nome,sg.ruolo FROM scuola AS s JOIN scuola_gestione AS sg ON s.id=sg.id_scuola WHERE sg.id_utente = ? AND s.approvata > 0 ORDER BY s.nome ASC";
+        $result = StatusCodes::FAIL;
+        $dbConn = dbConnect();
+        if($st = $dbConn->prepare($query))
+        {
+            $st->bind_param("i", $idUtente);
+            if($st->execute())
+            {
+                $st->bind_result($scuolaId, $scuolaNome, $userRuolo);
+                $result = array();
+                while($st->fetch())
+                {
+                    $scuola = array("scuolaId"=>$scuolaId, "scuolaNome"=>$scuolaNome, "userRuolo"=>$userRuolo);
+                    array_push($result, $scuola);
+                }
+            }
+        }
+        dbClose($dbConn);
+        return $result;
+    }
+    function GetMieScuoleWriterDaApprovare()
+    {
+        $idUtente = getIdUtenteFromSession();
+        $query = "SELECT s.id,s.nome,sg.ruolo FROM scuola AS s JOIN scuola_gestione AS sg ON s.id=sg.id_scuola WHERE sg.id_utente = ? AND s.approvata = 0 ORDER BY s.nome ASC";
         $result = StatusCodes::FAIL;
         $dbConn = dbConnect();
         if($st = $dbConn->prepare($query))
@@ -357,7 +393,7 @@
     }
     function AccessoScuola($username, $password)
     {
-        $query = "SELECT id_scuola,password,ruolo,nome,cognome FROM scuola_gestione WHERE username = ?";
+        $query = "SELECT id_utente,id_scuola,password,ruolo,nome,cognome FROM scuola_gestione WHERE username = ?";
         $result = StatusCodes::FAIL;
         $dbConn = dbConnect();
         if($st = $dbConn->prepare($query))
@@ -365,13 +401,14 @@
             $st->bind_param("s",$username);
             if($st->execute())
             {
-                $st->bind_result($idScuola,$pass_hash,$ruolo,$nome,$cognome);
+                $st->bind_result($idUtente,$idScuola,$pass_hash,$ruolo,$nome,$cognome);
                 if($st->fetch())
                 {
                     if(password_verify($password, $pass_hash))
                     {
                         $result = StatusCodes::OK;
                         $_SESSION["auth_scuola_$idScuola"]=$ruolo;
+                        $_SESSION["idUtente"]=$idUtente;
                     }
                     else
                         $result = StatusCodes::SCUOLA_PASSWORD_ERRATA;
