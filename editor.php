@@ -145,9 +145,7 @@
             if(is_array($res))
                 $responseContent = $res;
             if(isLogged())
-            {
                 SegnaComeLetta($idNews);
-            }
             break;
         case "GetNewsEditor":
             $idEditor = getParameter("idEditor", true);
@@ -333,7 +331,7 @@
     function ListReaderEditors()
     {
         $idUtente = getIdUtenteFromSession();
-        $query = "SELECT e.id,e.nome FROM editor AS e JOIN editor_follow AS ef ON e.id=ef.id_editor WHERE ef.id_utente = ? AND e.approvato = 1";
+        $query = "SELECT e.id,e.nome,e.immagine FROM editor AS e JOIN editor_follow AS ef ON e.id=ef.id_editor WHERE ef.id_utente = ? AND e.approvato = 1";
         $result = StatusCodes::FAIL;
         $dbConn = dbConnect();
         if($st = $dbConn->prepare($query))
@@ -342,12 +340,13 @@
             $result = $st->execute() ? StatusCodes::OK : StatusCodes::FAIL;
             if($result == StatusCodes::OK)
             {
-                $st->bind_result($editorId,$editorNome);
+                $st->bind_result($editorId,$editorNome,$editorImg);
                 $result = array();
                 while($st->fetch())
                 {
                     $editor = array("id"=>$editorId,
-                        "nome"=>$editorNome);
+                        "nome"=>$editorNome,
+                        "immagine"=>$editorImg);
                     array_push($result, $editor);
                 }
             }
@@ -558,7 +557,7 @@
     }
     function GetEditorsByLocation($location)
     {
-        $query = "SELECT id,nome,categoria FROM editor WHERE localita = ?";
+        $query = "SELECT id,nome,categoria,immagine FROM editor WHERE localita = ?";
         $result = StatusCodes::FAIL;
         $dbConn = dbConnect();
         if($st = $dbConn->prepare($query))
@@ -566,13 +565,14 @@
             $st->bind_param("s",$location);
             if($st->execute())
             {
-                $st->bind_result($editorId,$editorNome,$editorCategoria);
+                $st->bind_result($editorId,$editorNome,$editorCategoria,$immagine);
                 $result = array();
                 while($st->fetch())
                 {
                     $editor = array("editorId"=>$editorId,
                         "editorNome" => $editorNome,
-                        "editorCategoria" => $editorCategoria);
+                        "editorCategoria" => $editorCategoria,
+                        "immagine" => $immagine);
                     array_push($result, $editor);
                 }
             }
