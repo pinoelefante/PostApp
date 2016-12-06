@@ -208,6 +208,21 @@
                     $responseCode = $res;
             }
             break;
+        case "GetAllMyNewsTo":
+            if(isLogged(true))
+            {
+                $to = getParameter("to", true);
+                $res = GetAllMyNewsTo($to);
+                if(is_array($res))
+                {
+                    $responseCode = StatusCodes::OK;
+                    $responseContent = $res;
+                }
+                else
+                    $responseCode = $res;
+            }
+            break;
+            break;
         default:
             $responseCode = StatusCodes::METODO_ASSENTE;
             break;
@@ -688,6 +703,41 @@
         {
             $lastId == NULL ? $st->bind_param("ii", $idUtente,$idUtente) : $st->bind_param("iii", $idUtente,$idUtente,$from);
             $result = $st->execute() ? StatusCodes::OK : StatusCodes::FAIL;
+            if($result == StatusCodes::OK)
+            {
+                $st->bind_result($enteId,$enteNome, $newsId,$newsTitolo,$newsCorpo,$newsData,$newsImmagine,$newsPosizione,$newsLetta);
+                $result = array();
+                while($st->fetch())
+                {
+                    $news = array(
+                        "editorId"=>$enteId,
+                        "editorNome"=>$enteNome,
+                        "newsId"=>$newsId,
+                        "titolo"=>$newsTitolo,
+                        "corpo"=>$newsCorpo,
+                        "data"=>$newsData,
+                        "immagine"=>$newsImmagine,
+                        "posizione"=>$newsPosizione,
+                        "letta"=>$newsLetta
+                    );
+                    array_push($result, $news);
+                }
+            }
+            $st->close();
+        }
+        dbClose($dbConn);
+        return $result;
+    }
+    function GetAllMyNewsTo($to)
+    {
+        $idUtente = getIdUtenteFromSession();
+        $query = "SELECT e.id,e.nome,n.id,n.titolo,n.corpo,n.data,n.immagine,n.posizione, (SELECT COUNT(*) FROM news_editor_letta WHERE id_utente = ? AND id_news=n.id) AS letta FROM editor AS e JOIN editor_follow AS ef JOIN news_editor AS n ON ef.id_editor=e.id AND ef.id_editor=n.pubblicataDaEditor WHERE ef.id_utente = ? AND n.id > ? ORDER BY n.data DESC";
+        $result = StatusCodes::FAIL;
+        $dbConn = dbConnect();
+        if($st = $dbConn->prepare($query))
+        {
+            $st->bind_param("iii", $idUtente,$idUtente,$to);
+            $result = $st->execute() ? StatusCodes::OK : StatusCodes::SQL_FAIL;
             if($result == StatusCodes::OK)
             {
                 $st->bind_result($enteId,$enteNome, $newsId,$newsTitolo,$newsCorpo,$newsData,$newsImmagine,$newsPosizione,$newsLetta);
