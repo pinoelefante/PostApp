@@ -680,8 +680,8 @@
     {
         $idUtente = getIdUtenteFromSession();
         $query = $lastId == NULL ?
-                 "SELECT e.id,e.nome,n.id,n.titolo,n.corpo,n.data,n.immagine,n.posizione, (SELECT COUNT(*) FROM news_editor_letta WHERE id_utente = ? AND id_news=n.id) AS letta FROM editor AS e JOIN editor_follow AS ef JOIN news_editor AS n ON ef.id_editor=e.id AND ef.id_editor=n.pubblicataDaEditor WHERE ef.id_utente = ? ORDER BY n.data ASC LIMIT 10" :
-                 "SELECT e.id,e.nome,n.id,n.titolo,n.corpo,n.data,n.immagine,n.posizione, (SELECT COUNT(*) FROM news_editor_letta WHERE id_utente = ? AND id_news=n.id) AS letta FROM editor AS e JOIN editor_follow AS ef JOIN news_editor AS n ON ef.id_editor=e.id AND ef.id_editor=n.pubblicataDaEditor WHERE ef.id_utente = ? AND n.id < ? ORDER BY n.data ASC LIMIT 10";
+                 "SELECT e.id,e.nome,n.id,n.titolo,n.corpo,n.data,n.immagine,n.posizione, (SELECT COUNT(*) FROM news_editor_letta WHERE id_utente = ? AND id_news=n.id) AS letta FROM editor AS e JOIN editor_follow AS ef JOIN news_editor AS n ON ef.id_editor=e.id AND ef.id_editor=n.pubblicataDaEditor WHERE ef.id_utente = ? ORDER BY n.data DESC LIMIT 10" :
+                 "SELECT e.id,e.nome,n.id,n.titolo,n.corpo,n.data,n.immagine,n.posizione, (SELECT COUNT(*) FROM news_editor_letta WHERE id_utente = ? AND id_news=n.id) AS letta FROM editor AS e JOIN editor_follow AS ef JOIN news_editor AS n ON ef.id_editor=e.id AND ef.id_editor=n.pubblicataDaEditor WHERE ef.id_utente = ? AND n.id < ? ORDER BY n.data DESC LIMIT 10";
         $result = StatusCodes::FAIL;
         $dbConn = dbConnect();
         if($st = $dbConn->prepare($query))
