@@ -222,6 +222,19 @@
                     $responseCode = $res;
             }
             break;
+        case "GetEditorInfo":
+            if(isLogged(true))
+            {
+                $idEditor = getParameter("idEditor", true);
+                $res = GetInfoEditor($idEditor);
+                if(is_array($res))
+                {
+                    $responseCode = StatusCodes::OK;
+                    $responseContent = $res;
+                }
+                else
+                    $responseCode = $res;
+            }
             break;
         default:
             $responseCode = StatusCodes::METODO_ASSENTE;
@@ -756,6 +769,36 @@
                         "letta"=>$newsLetta
                     );
                     array_push($result, $news);
+                }
+            }
+            $st->close();
+        }
+        dbClose($dbConn);
+        return $result;
+    }
+    function GetInfoEditor($idEditor)
+    {
+        $query = "SELECT id,nome,localita,geo_coordinate,descrizione,immagine, (SELECT COUNT(*) FROM editor_follow WHERE id_editor=?) as followers FROM editor WHERE approvato = 1 AND id = ?";
+        $result = StatusCodes::FAIL;
+        $dbConn = dbConnect();
+        if($st = $dbConn->prepare($query))
+        {
+            $st->bind_param("ii", $idEditor,$idEditor);
+            $result = $st->execute() ? StatusCodes::OK : StatusCodes::SQL_FAIL;
+            if($result == StatusCodes::OK)
+            {
+                $st->bind_result($id,$nome,$localita,$geo,$descrizione,$immagine,$followers);
+                if($st->fetch())
+                {
+                    $result = array(
+                        "id"=>$id,
+                        "nome"=>$nome,
+                        "localita"=>$localita,
+                        "coordinate"=>$geo,
+                        "descrizione"=>$descrizione,
+                        "immagine"=>$immagine,
+                        "followers"=>$followers
+                    );
                 }
             }
             $st->close();
