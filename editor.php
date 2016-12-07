@@ -788,7 +788,7 @@
             $result = $st->execute() ? StatusCodes::OK : StatusCodes::SQL_FAIL;
             if($result == StatusCodes::OK)
             {
-                $st->bind_result($id,$nome,$localita,$geo,$descrizione,$immagine,$followers);
+                $st->bind_result($id,$nome,$localita,$geo,$descrizione,$immagine,$followers,$following);
                 if($st->fetch())
                 {
                     $result = array(
@@ -798,7 +798,8 @@
                         "coordinate"=>$geo,
                         "descrizione"=>$descrizione,
                         "immagine"=>$immagine,
-                        "followers"=>$followers
+                        "followers"=>$followers,
+                        "following"=>$following
                     );
                 }
             }
