@@ -237,6 +237,20 @@
                     $responseCode = $res;
             }
             break;
+        case "CercaEditor":
+            if(isLogged(true))
+            {
+                $nomeCercare = getParameter("query", true);
+                $res = CercaEditor($nomeCercare);
+                if(is_array($res))
+                {
+                    $responseCode = StatusCodes::OK;
+                    $responseContent = $res;
+                }
+                else
+                    $responseCode = $res;
+            }
+            break;
         default:
             $responseCode = StatusCodes::METODO_ASSENTE;
             break;
@@ -810,6 +824,29 @@
         }
         dbClose($dbConn);
         return $result;
+    }
+    function CercaEditor($nomeCercare)
+    {
+        try
+        {
+            $query = "SELECT id,nome FROM editor WHERE nome LIKE '%".$nomeCercare."%' ORDER BY CASE WHEN nome LIKE '".$nomeCercare."%' THEN 1 WHEN nome LIKE '%".$nomeCercare."' THEN 3 ELSE 2 END";
+            $result = StatusCodes::FAIL;
+            $dbConn = dbConnect();
+            $res = $dbConn->query($query);
+            $result = array();
+            while($row = $res->fetch_array(MYSQLI_ASSOC))
+            {
+                $editor = array("id"=>$row["id"],"nome"=>$row["nome"]);
+                array_push($result, $editor);
+            }
+            $res->close();
+            dbClose($dbConn);
+            return $result;
+        }
+        catch(Exception $e)
+        {
+            return StatusCodes::SQL_FAIL;
+        }
     }
     function VerificaAutorizzazioneAPostare($idEditor)
     {
