@@ -149,9 +149,10 @@
             break;
         case "GetNewsEditor":
             $idEditor = getParameter("idEditor", true);
+            $from = getParameter("from");
             //if(isLogged(true))
             //{
-                $res = GetNewsEditor($idEditor);
+                $res = GetNewsEditor($idEditor, $from);
                 if(is_array($res))
                 {
                     $responseCode = StatusCodes::OK;
@@ -520,14 +521,16 @@
         dbClose($dbConn);
         return $result;
     }
-    function GetNewsEditor($idEditor)
+    function GetNewsEditor($idEditor, $from)
     {
-        $query = "SELECT ed.id, ed.nome,n.id,n.titolo,n.corpo,n.data,n.immagine,n.posizione FROM editor AS ed JOIN news_editor AS n ON ed.id=n.pubblicataDaEditor WHERE n.pubblicataDaEditor=? ORDER BY n.data DESC";
+        $query = empty($from) ? 
+        "SELECT ed.id, ed.nome,n.id,n.titolo,n.corpo,n.data,n.immagine,n.posizione FROM editor AS ed JOIN news_editor AS n ON ed.id=n.pubblicataDaEditor WHERE n.pubblicataDaEditor=? AND ed.approvato=1 ORDER BY n.data DESC LIMIT 10":
+        "SELECT ed.id, ed.nome,n.id,n.titolo,n.corpo,n.data,n.immagine,n.posizione FROM editor AS ed JOIN news_editor AS n ON ed.id=n.pubblicataDaEditor WHERE n.pubblicataDaEditor=? AND n.id < ? AND ed.approvato=1 ORDER BY n.data DESC LIMIT 10";
         $dbConn = dbConnect();
         $result = StatusCodes::FAIL;
         if($st = $dbConn->prepare($query))
         {
-            $st->bind_param("i", $idEditor);
+            empty($from) ? $st->bind_param("i", $idEditor) : $st->bind_param("ii", $idEditor,$from);
             if($st->execute())
             {
                 $st->bind_result($editorId,$editorNome, $newsId, $newsTitolo, $newsCorpo, $newsData, $newsImmagine, $newsPosizione);
@@ -538,7 +541,7 @@
                         "editorNome" => $editorNome,
                         "newsId" => $newsId,
                         "titolo" => $newsTitolo,
-                        //"corpo" => $newsCorpo,
+                        "corpo" => $newsCorpo,
                         "data" => $newsData,
                         "immagine" => $newsImmagine,
                         "posizione" => $newsPosizione);
