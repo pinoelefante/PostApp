@@ -829,7 +829,7 @@
     {
         try
         {
-            $query = "SELECT id,nome FROM editor WHERE nome LIKE '%".$nomeCercare."%' ORDER BY CASE WHEN nome LIKE '".$nomeCercare."%' THEN 1 WHEN nome LIKE '%".$nomeCercare."' THEN 3 ELSE 2 END";
+            $query = "SELECT id,nome FROM editor WHERE approvato = 1 AND nome LIKE '%".$nomeCercare."%' ORDER BY CASE WHEN nome LIKE '".$nomeCercare."%' THEN 1 WHEN nome LIKE '%".$nomeCercare."' THEN 3 ELSE 2 END";
             $result = StatusCodes::FAIL;
             $dbConn = dbConnect();
             $res = $dbConn->query($query);
