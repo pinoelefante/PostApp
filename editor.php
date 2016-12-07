@@ -778,12 +778,13 @@
     }
     function GetInfoEditor($idEditor)
     {
-        $query = "SELECT id,nome,localita,geo_coordinate,descrizione,immagine, (SELECT COUNT(*) FROM editor_follow WHERE id_editor=?) as followers FROM editor WHERE approvato = 1 AND id = ?";
+        $idUtente = getIdUtenteFromSession();
+        $query = "SELECT id,nome,localita,geo_coordinate,descrizione,immagine, (SELECT COUNT(*) FROM editor_follow WHERE id_editor=?) as followers,(SELECT COUNT(*) FROM editor_follow WHERE id_editor=? AND id_utente=?) as following FROM editor WHERE approvato = 1 AND id = ?";
         $result = StatusCodes::FAIL;
         $dbConn = dbConnect();
         if($st = $dbConn->prepare($query))
         {
-            $st->bind_param("ii", $idEditor,$idEditor);
+            $st->bind_param("iiii", $idEditor,$idEditor,$idUtente,$idEditor);
             $result = $st->execute() ? StatusCodes::OK : StatusCodes::SQL_FAIL;
             if($result == StatusCodes::OK)
             {
