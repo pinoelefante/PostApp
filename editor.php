@@ -618,7 +618,7 @@
     }
     function GetEditorsByLocation($location)
     {
-        $query = "SELECT id,nome,categoria,immagine FROM editor WHERE localita = ?";
+        $query = "SELECT id,nome,categoria,immagine FROM editor WHERE localita = ? AND approvato=1";
         $result = StatusCodes::FAIL;
         $dbConn = dbConnect();
         if($st = $dbConn->prepare($query))
@@ -652,7 +652,7 @@
             {
                 $st->bind_result($istat, $nomeComune);
                 $result = array();
-                while($st-fetch())
+                while($st->fetch())
                 {
                     $comune = array("id"=>$istat, "comune"=>$nomeComune);
                     array_push($result, $comune);
