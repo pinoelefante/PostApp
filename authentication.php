@@ -39,6 +39,14 @@
 			//TODO: cancellare utente corrente
 			//		effettuare accesso con nuovo utente
 			break;
+		case "RegistraPush":
+			if(isLogged(true))
+			{
+				$token = getParameter("token", true);
+				$deviceType = getParameter("deviceOS", true);
+				$responseCode = RegistraDevice($token, $deviceType);
+			}
+			break;
         default:
             $responseCode = StatusCodes::METODO_ASSENTE;
             break;
@@ -120,6 +128,21 @@
 			$st->bind_param("s",$loc);
             $result = $st->execute() ? StatusCodes::OK : StatusCodes::FAIL;
 
+            $st->close();
+		}
+		dbClose($dbConn);
+		return $result;
+	}
+	function RegistraDevice($token, $device)
+	{
+		$idUtente = getIdUtenteFromSession();
+		$query = "INSERT INTO push_devices (id_utente,token,deviceOS) VALUES (?,?,?)";
+		$dbConn = dbConnect();
+		$result = StatusCodes::FAIL;
+		if($st = $dbConn->prepare($query))
+		{
+			$st->bind_param("isi",$idUtente,$token,$device);
+			$result = $st->execute() ? StatusCodes::OK : StatusCodes::FAIL;
             $st->close();
 		}
 		dbClose($dbConn);

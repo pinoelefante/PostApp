@@ -2,7 +2,7 @@
 -- Host:                         127.0.0.1
 -- Versione server:              10.1.16-MariaDB - mariadb.org binary distribution
 -- S.O. server:                  Win32
--- HeidiSQL Versione:            9.4.0.5130
+-- HeidiSQL Versione:            9.4.0.5137
 -- --------------------------------------------------------
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
@@ -65,6 +65,7 @@ CREATE TABLE IF NOT EXISTS `editor_follow` (
   `id_utente` int(11) unsigned NOT NULL,
   `id_editor` int(11) unsigned NOT NULL,
   `cancellabile` bit(1) NOT NULL DEFAULT b'1',
+  `notificabile` bit(1) NOT NULL DEFAULT b'1' COMMENT 'specifica se l''utente vuole ricevere notifiche dall''editor',
   PRIMARY KEY (`id_utente`,`id_editor`),
   KEY `FK_editor_follow_editor` (`id_editor`),
   CONSTRAINT `FK_editor_follow_editor` FOREIGN KEY (`id_editor`) REFERENCES `editor` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
@@ -161,9 +162,13 @@ CREATE TABLE IF NOT EXISTS `news_scuola_classe` (
 -- L’esportazione dei dati non era selezionata.
 -- Dump della struttura di tabella postapp.news_scuola_classe_destinatario
 CREATE TABLE IF NOT EXISTS `news_scuola_classe_destinatario` (
-  `id_news` int(11) NOT NULL,
-  `id_classe` int(11) NOT NULL,
-  PRIMARY KEY (`id_news`,`id_classe`)
+  `id_news` int(11) unsigned NOT NULL,
+  `id_classe` int(11) unsigned NOT NULL,
+  `ruolo` varchar(3) NOT NULL,
+  PRIMARY KEY (`id_news`,`id_classe`,`ruolo`),
+  KEY `FK_news_scuola_classe_destinatario_scuola_classe` (`id_classe`),
+  CONSTRAINT `FK_news_scuola_classe_destinatario_news_scuola_classe` FOREIGN KEY (`id_news`) REFERENCES `news_scuola_classe` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `FK_news_scuola_classe_destinatario_scuola_classe` FOREIGN KEY (`id_classe`) REFERENCES `scuola_classe` (`id_classe`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- L’esportazione dei dati non era selezionata.
@@ -211,19 +216,30 @@ CREATE TABLE IF NOT EXISTS `news_scuola_thankyou` (
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- L’esportazione dei dati non era selezionata.
+-- Dump della struttura di tabella postapp.push_devices
+CREATE TABLE IF NOT EXISTS `push_devices` (
+  `id_utente` int(11) unsigned NOT NULL,
+  `token` varchar(767) NOT NULL,
+  `deviceOS` tinyint(3) unsigned NOT NULL COMMENT '1 android; 2 ios; 3 windows 10;',
+  UNIQUE KEY `token` (`token`),
+  KEY `FK_push_devices_utente` (`id_utente`),
+  CONSTRAINT `FK_push_devices_utente` FOREIGN KEY (`id_utente`) REFERENCES `utente` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+-- L’esportazione dei dati non era selezionata.
 -- Dump della struttura di tabella postapp.scuola
 CREATE TABLE IF NOT EXISTS `scuola` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-  `nome` varchar(80) NOT NULL,
+  `nome` varchar(50) NOT NULL,
   `localita` varchar(7) NOT NULL,
   `telefono` varchar(15) NOT NULL,
   `email` varchar(128) NOT NULL,
-  `indirizzo` varchar(128) NOT NULL DEFAULT '0',
+  `indirizzo` varchar(128) DEFAULT NULL,
   `approvata` bit(1) NOT NULL DEFAULT b'0',
   `cp_statistiche` bit(1) NOT NULL DEFAULT b'0',
   `cp_lettura_certificata` bit(1) NOT NULL DEFAULT b'0',
   `data_registrazione` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `immagine` varchar(20) NOT NULL,
+  `immagine` varchar(20) DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
@@ -266,8 +282,10 @@ CREATE TABLE IF NOT EXISTS `scuola_codice_famiglia` (
   `codice_studente` varchar(17) NOT NULL,
   `id_scuola` int(11) unsigned NOT NULL,
   `id_classe` int(11) unsigned NOT NULL,
-  `alunno_nome` varchar(20) NOT NULL,
-  `alunno_cognome` varchar(20) NOT NULL,
+  `alunno_nome` varchar(20) DEFAULT NULL,
+  `alunno_cognome` varchar(20) DEFAULT NULL,
+  `alunno_nascita` date DEFAULT NULL COMMENT 'per distinguere omonimie',
+  `data_creazione` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id_codice`),
   UNIQUE KEY `codice_genitore` (`codice_genitore`),
   UNIQUE KEY `codice_studente` (`codice_studente`),
@@ -310,7 +328,10 @@ CREATE TABLE IF NOT EXISTS `scuola_gestione` (
   `nome` varchar(20) DEFAULT NULL,
   `cognome` varchar(20) DEFAULT NULL,
   PRIMARY KEY (`id_utente`,`id_scuola`),
-  UNIQUE KEY `username` (`username`)
+  UNIQUE KEY `username` (`username`),
+  KEY `FK_scuola_gestione_scuola` (`id_scuola`),
+  CONSTRAINT `FK_scuola_gestione_scuola` FOREIGN KEY (`id_scuola`) REFERENCES `scuola` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `FK_scuola_gestione_utente` FOREIGN KEY (`id_utente`) REFERENCES `utente` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- L’esportazione dei dati non era selezionata.

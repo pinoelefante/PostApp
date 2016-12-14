@@ -296,6 +296,7 @@
                     if($categoria == 'Comune')
                         AutoFollowComune($idEditor, $localita);
                     AutoFollowSuperReader($idEditor);
+                    FollowEditor($idEditor);
                 }
             }
 			$st->close();
@@ -938,5 +939,36 @@
         }
         dbClose($dbConn);
         return $result;
+    }
+    function GetUtentiSeguonoEditorNotificabili($idEditor)
+    {
+        $query = "SELECT dev.id_utente,dev.token,dev.deviceOS FROM editor_follow AS foll JOIN push_devices AS dev ON foll.id_utente=dev.id_utente WHERE foll.id_editor=? AND foll.notificabile=1";
+        $result = StatusCodes::FAIL;
+        $dbConn = dbConnect();
+        if($st = $dbConn->prepare($query))
+        {
+            $st->bind_param("i",$idEditor);
+            $result = $st->execute() ? StatusCodes::OK : StatusCodes::SQL_FAIL;
+            if($result == StatusCodes::OK)
+            {
+                $st->bind_result($idUtente,$token,$deviceOS);
+                $result = array();
+                while($st->fetch())
+                {
+                    $device = array("user"=>$idUtente, "token"=>$token,"deviceOS"=>$deviceOS);
+                    array_push($result, $device);
+                }
+            }
+            $st->close();
+        }
+        dbClose();
+        return $result;
+    }
+    function InviaNotificaPush($idEditor, $titolo, $corpo,$id_news,$autore)
+    {
+        $devices = GetUtentiSeguonoEditorNotificabili($idEditor);
+        $dev_android = array_filter($devices, function($item) {return $item["deviceOS"]==1;} );
+        $dev_ios = array_filter($devices, function($item) {return $item["deviceOS"]==2;} );
+        $dev_win10 = array_filter($devices, function($item) {return $item["deviceOS"]==3;} );
     }
 ?>
