@@ -22,6 +22,7 @@
         const EDITOR_NEWS_NON_TROVATA = 55;
         const NEWS_GIA_LETTA = 56;
         const EDITOR_NON_SEGUITO = 57;
+        const NEWS_LETTURA_GIA_CONFERMATA = 58;
 
         const SCUOLA_IMPOSSIBILE_ASSEGNARE_PRESIDE = 60;
         const SCUOLA_USERNAME_NON_VALIDO = 61;
