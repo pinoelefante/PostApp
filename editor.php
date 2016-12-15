@@ -3,6 +3,7 @@
     
     require_once("enums.php");
     require_once("functions.php");
+    require_once("push_notifications.php");
     
     $action = getParameter("action", true);
     $responseCode = StatusCodes::FAIL;
@@ -94,10 +95,11 @@
                     $corpo = getParameter("corpo", true);
                     $immagine = getParameter("img");
                     $posizione = getParameter("posizione");
-                    $responseCode = PostEditor($idEditor, getIdUtenteFromSession(), $titolo, $corpo, $immagine, $posizione);
-                    if($responseCode == StatusCodes::OK)
+                    $responseCode = $idNews = PostEditor($idEditor, getIdUtenteFromSession(), $titolo, $corpo, $immagine, $posizione);
+                    if($idNews > 0)
                     {
-                        //TODO: invio notifica
+                        $responseCode = StatusCodes::OK;
+                        InviaNotificaPush($idEditor,$titolo,$corpo,$idNews);
                     }
                 }
             }
@@ -425,6 +427,8 @@
         {
             $st->bind_param("iissss", $idEditor,$idUtente, $titolo, $corpo, $image_path, $posizione);
             $result = $st->execute() ? StatusCodes::OK : StatusCodes::FAIL;
+            if($result == StatusCodes::OK)
+                $result = $dbConn->insert_id;
             $st->close();
         }
         dbClose($dbConn);
@@ -964,11 +968,28 @@
         dbClose();
         return $result;
     }
-    function InviaNotificaPush($idEditor, $titolo, $corpo,$id_news,$autore)
+    function GetEditorNomeById($idEditor)
+    {
+        $query = "SELECT nome FROM editor WHERE id = ?";
+        $result = "";
+        $dbConn = dbConnect();
+        if($st = $dbConn->prepare($query))
+        {
+            $st->bind_param("i",$idEditor);
+            if($st->execute())
+            {
+                $st->bind_result($nomeEditor);
+                if($st->fetch())
+                    $result = $nomeEditor;
+            }
+            $st->close();
+        }
+        dbClose();
+        return $result;
+    }
+    function InviaNotificaPush($idEditor,$titolo,$corpo,$id_news)
     {
         $devices = GetUtentiSeguonoEditorNotificabili($idEditor);
-        $dev_android = array_filter($devices, function($item) {return $item["deviceOS"]==1;} );
-        $dev_ios = array_filter($devices, function($item) {return $item["deviceOS"]==2;} );
-        $dev_win10 = array_filter($devices, function($item) {return $item["deviceOS"]==3;} );
+        sendPushNotification($titolo,$corpo,GetEditorNomeById($idEditor),$id_news,$devices);
     }
 ?>

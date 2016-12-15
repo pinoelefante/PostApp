@@ -47,6 +47,14 @@
 				$responseCode = RegistraDevice($token, $deviceType);
 			}
 			break;
+		case "UnregisterPush":
+			if(isLogged(true))
+			{
+				$token = getParameter("token", true);
+				$deviceType = getParameter("deviceOS", true);
+				$responseCode = UnRegistraDevice($token, $deviceType);
+			}
+			break;
         default:
             $responseCode = StatusCodes::METODO_ASSENTE;
             break;
@@ -143,6 +151,21 @@
 		{
 			$st->bind_param("isi",$idUtente,$token,$device);
 			$result = $st->execute() ? StatusCodes::OK : StatusCodes::FAIL;
+            $st->close();
+		}
+		dbClose($dbConn);
+		return $result;
+	}
+	function UnRegistraDevice($token, $device)
+	{
+		$idUtente = getIdUtenteFromSession();
+		$query = "DELETE FROM push_devices WHERE id_utente=? AND token=? AND deviceOS=?";
+		$dbConn = dbConnect();
+		$result = StatusCodes::FAIL;
+		if($st = $dbConn->prepare($query))
+		{
+			$st->bind_param("isi",$idUtente,$token,$device);
+			$result = $st->execute() && $dbConn->affected_rows>0 ? StatusCodes::OK : StatusCodes::FAIL;
             $st->close();
 		}
 		dbClose($dbConn);
