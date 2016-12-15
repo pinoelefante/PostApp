@@ -222,7 +222,7 @@
                 //TODO
             }
             break;
-        case "GetNewsMyScuola":
+        case "GetNewsMyScuole":
             if(isLogged(true))
             {
                 //TODO
@@ -280,7 +280,9 @@
         case "NotificaLetturaScuola":
             if(isLogged(true))
             {
-                //TODO
+                //TODO verifica autorizzazione
+                $idNews = getParameter("idNews", true);
+                $responseCode = NotificaLettura($idNews, "scuola");
             }
             break;
         case "LeggiNewsClasse":
@@ -301,7 +303,9 @@
         case "NotificaLetturaClasse":
             if(isLogged(true))
             {
-                //TODO
+                //TODO verifica autorizzazione
+                $idNews = getParameter("idNews", true);
+                $responseCode = NotificaLettura($idNews, "classe");
             }
             break;
         default:
