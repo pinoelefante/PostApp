@@ -3,6 +3,7 @@
     
     require_once("enums.php");
     require_once("functions.php");
+    require_once("news_common.php");
     require_once("push_notifications.php");
     
     $action = getParameter("action", true);
@@ -136,8 +137,7 @@
             if(isLogged(true))
             {
                 $idNews = getParameter("idNews", true);
-                $idUtente = getIdUtenteFromSession();
-                $responseCode = ThanksForNews($idUtente, $idNews);
+                $responseCode = ThankYou($idNews,"editor");
             }
             break;
         case "LeggiNews":
@@ -147,7 +147,7 @@
             if(is_array($res))
                 $responseContent = $res;
             if(isLogged())
-                SegnaComeLetta($idNews);
+                SegnaComeLetta($idNews, "editor");
             break;
         case "GetNewsEditor":
             $idEditor = getParameter("idEditor", true);
@@ -496,20 +496,6 @@
         dbClose($dbConn);
         return $result;
     }
-    function ThanksForNews($id_utente, $id_news)
-    {
-        $query = "INSERT INTO news_editor_thankyou (id_utente, id_news) VALUES (?,?)";
-        $result = StatusCodes::FAIL;
-        $dbConn = dbConnect();
-        if($st = $dbConn->prepare($query))
-        {
-            $st->bind_param("ii",$id_utente,$id_news);
-            $result = $st->execute() ? StatusCodes::OK : StatusCodes::EDITOR_NEWS_GIA_RINGRAZIATO;
-            $st->close();
-        }
-        dbClose($dbConn);
-        return $result;
-    }
     function GetNews($idNews)
     {
         $query = "SELECT ed.id, ed.nome,n.id,n.titolo,n.corpo,n.data,n.immagine,n.posizione, (SELECT COUNT(*) FROM news_editor_thankyou WHERE id_news=n.id) AS thankyou FROM editor AS ed JOIN news_editor AS n ON ed.id=n.pubblicataDaEditor WHERE n.id=?";
@@ -536,21 +522,6 @@
                 else
                     $result = StatusCodes::EDITOR_NEWS_NON_TROVATA;
             }
-            $st->close();
-        }
-        dbClose($dbConn);
-        return $result;
-    }
-    function SegnaComeLetta($idNews)
-    {
-        $idUtente = getIdUtenteFromSession();
-        $query = "INSERT INTO news_editor_letta (id_utente, id_news) VALUES (?,?)";
-        $dbConn = dbConnect();
-        $result = StatusCodes::FAIL;
-        if($st = $dbConn->prepare($query))
-        {
-            $st->bind_param("ii", $idUtente,$idNews);
-            $result = $st->execute() ? StatusCodes::OK : StatusCodes::EDITOR_NEWS_GIA_LETTA;
             $st->close();
         }
         dbClose($dbConn);

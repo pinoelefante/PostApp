@@ -195,67 +195,71 @@
         case "SbloccaCodice":
             if(isLogged(true))
             {
-                
+                //TODO
             }
             break;
         case "PostaNewsScuola":
             if(isLogged(true))
             {
-                
+                //TODO
             }
             break;
         case "PostaNewsClasse":
             if(isLogged(true))
             {
-                
+                //TODO
             }
             break;
         case "GetNewsScuola": //preside
             if(isLogged(true))
             {
-                
+                //TODO
             }
             break;
         case "GetNewsClassi": //preside
             if(isLogged(true))
             {
-                
+                //TODO
             }
             break;
         case "GetNewsMyScuola":
             if(isLogged(true))
             {
-                
+                //TODO
             }
             break;
         case "GetNewsMyClassi":
             if(isLogged(true))
             {
-                
+                //TODO
             }
             break;
         case "GetNotificheScuola":
             if(isLogged(true))
             {
-                
+                //TODO
             }
             break;
         case "GetNotificheClassi":
             if(isLogged(true))
             {
-                
+                //TODO
             }
             break;
         case "ThankYouNewsScuola":
             if(isLogged(true))
             {
-                
+                //TODO verifica accesso scuola
+                $idNews = getParameter("idNews", true);
+                $responseCode = ThankYou($idNews,"scuola");
             }
             break;
         case "ThankYouNewsClasse":
             if(isLogged(true))
             {
-                
+                //TODO verifica accesso classe
+                $idNews = getParameter("idNews", true);
+                $responseCode = ThankYou($idNews,"classe");
             }
             break;
         case "LeggiNewsScuola":
@@ -273,6 +277,12 @@
                     $responseCode = $res;
             }
             break;
+        case "NotificaLetturaScuola":
+            if(isLogged(true))
+            {
+                //TODO
+            }
+            break;
         case "LeggiNewsClasse":
             if(isLogged(true))
             {
@@ -286,6 +296,12 @@
                 }
                 else
                     $responseCode = $res;
+            }
+            break;
+        case "NotificaLetturaClasse":
+            if(isLogged(true))
+            {
+                //TODO
             }
             break;
         default:

@@ -18,9 +18,9 @@
         const EDITOR_ERRORE_CREAZIONE = 51;
         const EDITOR_UTENTE_NON_AUTORIZZATO = 52;
         const EDITOR_SEGUI_GIA = 53;
-        const EDITOR_NEWS_GIA_RINGRAZIATO = 54;
+        const NEWS_GIA_RINGRAZIATO = 54;
         const EDITOR_NEWS_NON_TROVATA = 55;
-        const EDITOR_NEWS_GIA_LETTA = 56;
+        const NEWS_GIA_LETTA = 56;
         const EDITOR_NON_SEGUITO = 57;
 
         const SCUOLA_IMPOSSIBILE_ASSEGNARE_PRESIDE = 60;

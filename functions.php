@@ -88,10 +88,33 @@
     //ritorna percorso salvataggio immagine
     function SalvaImmagine($immagine, $folder = "images")
     {
-        if($immagine==NULL)
-            return NULL;
-        //TODO: salvataggio immagine su disco
+        if(empty($folder))
+            $folder = "images";
+            
+        $result = NULL;
+        if(!empty($immagine))
+        {
+            mkdir($folder, 0664, true); // 0664 = lettura/scrittura proprietario&gruppo, lettura utenti
+            $fileBytes = base64_decode($file);
+            $filename = GeneraUniqueFileName($folder, "IMG");
+            $fp = fopen("./$folder/$filename", "wb");
+            if(fwrite($fp, $fileBytes))
+                $result = "$folder/$filename";
+            fclose($fp);
+            
+        }
+        return $result;
     }
+    function GeneraUniqueFileName($folder, $prefix = "IMG")
+	{
+		do 
+		{
+			$filename = uniqid("IMG", true);
+			usleep(2);
+		}
+        while(file_exists($folder."/".$filename));
+		return $filename;
+	}
     function hashPassword($password)
     {
         $options = array(
