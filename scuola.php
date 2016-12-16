@@ -61,13 +61,11 @@
             }
             break; 
         case "GetMieScuoleReader":
-            //TODO
-            break;
-        case "VerificaAccesso":
             if(isLogged(true))
             {
-                $idScuola = getParameter("idScuola", true);
-                $responseCode = VerificaAutorizzazione($idScuola) ? StatusCodes::OK : StatusCodes::LOGIN_NON_LOGGATO;
+                $responseCode = $responseContent = GetMieScuoleReader();
+                if(is_array($res))
+                    $responseCode = StatusCodes::OK;
             }
             break;
         case "AccessoScuola":
@@ -201,7 +199,21 @@
         case "PostaNewsScuola":
             if(isLogged(true))
             {
-                //TODO
+                $idScuola = getParameter("idScuola", true);
+                if(UtentePuoPostarePerScuola($idScuola))
+                {
+                    $titolo = getParameter("titolo", true);
+                    $corpoNews = getParameter("corpo", true);
+                    $immagine = getParameter("image");
+                    $idNews = $responseCode = PostaNewsScuola($idScuola,$titolo,$corpoNews,$immagine);
+                    if($idNews > 0)
+                    {
+                        $responseCode = StatusCodes::OK;
+                        InviaNotificaPushScuola($idScuola,$idNews,$titolo,$corpoNews);
+                    }
+                }
+                else
+                    $responseCode = StatusCodes::SCUOLA_PERMESSI_INSUFFICIENTI;
             }
             break;
         case "PostaNewsClasse":
@@ -249,63 +261,65 @@
         case "ThankYouNewsScuola":
             if(isLogged(true))
             {
-                //TODO verifica accesso scuola
                 $idNews = getParameter("idNews", true);
-                $responseCode = ThankYou($idNews,"scuola");
+                $responseCode = VerificaAutorizzazioneLetturaNewsScuola($idNews) == StatusCodes::OK ? ThankYou($idNews,"scuola") : StatusCodes::SCUOLA_PERMESSI_INSUFFICIENTI;
             }
             break;
         case "ThankYouNewsClasse":
             if(isLogged(true))
             {
-                //TODO verifica accesso classe
                 $idNews = getParameter("idNews", true);
-                $responseCode = ThankYou($idNews,"classe");
+                $responseCode = VerificaAutorizzazioneLetturaNewsClasse($idNews) == StatusCodes::OK ? ThankYou($idNews,"classe") : StatusCodes::SCUOLA_PERMESSI_INSUFFICIENTI;
             }
             break;
         case "LeggiNewsScuola":
             if(isLogged(true))
             {
                 $idNews = getParameter("idNews",true);
-                $res = LeggiNewsScuola($idNews);
-                if(is_array($res))
+                if(VerificaAutorizzazioneLetturaNewsScuola($idNews))
                 {
-                    $responseCode = StatusCodes::OK;
-                    $responseContent = $res;
-                    SegnaComeLetta($idNews, "scuola");
+                    $responseCode = $res = LeggiNewsScuola($idNews);
+                    if(is_array($res))
+                    {
+                        $responseCode = StatusCodes::OK;
+                        $responseContent = $res;
+                        SegnaComeLetta($idNews, "scuola");
+                    }
                 }
                 else
-                    $responseCode = $res;
+                    $responseCode = StatusCodes::SCUOLA_PERMESSI_INSUFFICIENTI;
             }
             break;
         case "NotificaLetturaScuola":
             if(isLogged(true))
             {
-                //TODO verifica autorizzazione
                 $idNews = getParameter("idNews", true);
-                $responseCode = NotificaLettura($idNews, "scuola");
+                $responseCode = VerificaAutorizzazioneLetturaNewsScuola($idNews) == StatusCodes::OK ? NotificaLettura($idNews, "scuola") : StatusCodes::SCUOLA_PERMESSI_INSUFFICIENTI;
             }
             break;
         case "LeggiNewsClasse":
             if(isLogged(true))
             {
                 $idNews = getParameter("idNews",true);
-                $res = LeggiNewsClasse($idNews);
-                if(is_array($res))
+                if(VerificaAutorizzazioneLetturaNewsClasse($idNews))
                 {
-                    $responseCode = StatusCodes::OK;
-                    $responseContent = $res;
-                    SegnaComeLetta($idNews, "classe");
+                    $responseCode = $res = LeggiNewsClasse($idNews);
+                    if(is_array($res))
+                    {
+                        $responseCode = StatusCodes::OK;
+                        $responseContent = $res;
+                        SegnaComeLetta($idNews, "classe");
+                    }
                 }
-                else
-                    $responseCode = $res;
+                else 
+                    $responseCode = StatusCodes::SCUOLA_PERMESSI_INSUFFICIENTI;
             }
             break;
         case "NotificaLetturaClasse":
             if(isLogged(true))
             {
-                //TODO verifica autorizzazione
                 $idNews = getParameter("idNews", true);
-                $responseCode = NotificaLettura($idNews, "classe");
+                $responseCode = VerificaAutorizzazioneLetturaNewsClasse($idNews) == StatusCodes::OK ? NotificaLettura($idNews, "classe") : StatusCodes::SCUOLA_PERMESSI_INSUFFICIENTI;
             }
             break;
         default:
@@ -591,17 +605,14 @@
                 $st->bind_result($scuolaId,$scuolaNome,$newsId,$newsTitolo,$newsCorpo,$newsData,$newsImmagine, $newsThankyou);
                 if($st->fetch())
                 {
-                    if(($result = VerificaAutorizzazioneLetturaNewsScuola($scuolaId))==StatusCodes::OK)
-                    {
-                        $result = array("scuolaId"=>$scuolaId,
-                                        "scuolaNome" => $scuolaNome,
-                                        "newsId" => $newsId,
-                                        "titolo" => $newsTitolo,
-                                        "corpo" => $newsCorpo,
-                                        "data" => $newsData,
-                                        "immagine" => $newsImmagine,
-                                        "thankyou" => $newsThankyou);
-                    }
+                    $result = array("scuolaId"=>$scuolaId,
+                                    "scuolaNome" => $scuolaNome,
+                                    "newsId" => $newsId,
+                                    "titolo" => $newsTitolo,
+                                    "corpo" => $newsCorpo,
+                                    "data" => $newsData,
+                                    "immagine" => $newsImmagine,
+                                    "thankyou" => $newsThankyou);
                 }
             }
             $st->close();
@@ -622,17 +633,14 @@
                 $st->bind_result($newsId,$newsTitolo,$newsCorpo,$newsImmagine,$newsData,$classeId,$classeNum,$classeSezione,$scuolaNome,$scuolaId,$plessoId,$plessoNome,$grado,$thankyou);
                 if($st->fetch())
                 {
-                    if(($result = VerificaAutorizzazioneLetturaNewsClasse($scuolaId))==StatusCodes::OK)
-                    {
-                        $result = array("classeId"=>$classeId,
-                                        "classeNome" => "Classe $classeNum $classeSezione - Scuola $grado $scuolaNome - Plesso $plessoNome",
-                                        "newsId" => $newsId,
-                                        "titolo" => $newsTitolo,
-                                        "corpo" => $newsCorpo,
-                                        "data" => $newsData,
-                                        "immagine" => $newsImmagine,
-                                        "thankyou" => $thankyou);
-                    }
+                    $result = array("classeId"=>$classeId,
+                                    "classeNome" => "Classe $classeNum $classeSezione - Scuola $grado $scuolaNome - Plesso $plessoNome",
+                                    "newsId" => $newsId,
+                                    "titolo" => $newsTitolo,
+                                    "corpo" => $newsCorpo,
+                                    "data" => $newsData,
+                                    "immagine" => $newsImmagine,
+                                    "thankyou" => $thankyou);
                 }
             }
             $st->close();
@@ -640,24 +648,42 @@
         dbClose($dbConn);
         return $result;
     }
-    function VerificaAutorizzazione($idScuola)
+    function GetMieScuoleReader()
     {
-        if(array_key_exists("auth_scuola_$idScuola",$_SESSION))
-            return true;
-
         $idUtente = getIdUtenteFromSession();
-        $query = "SELECT ruolo FROM scuola_gestione WHERE id_utente = ? AND id_scuola = ?";
-        $result = false;
+        $query = "SELECT s.id,s.nome FROM scuola_follow AS sf JOIN scuola AS s ON sf.id_scuola=s.id WHERE sf.id_utente=? AND s.approvata=1";
+        $result = StatusCodes::FAIL;
         $dbConn = dbConnect();
         if($st = $dbConn->prepare($query))
         {
-            $st->bind_param("ii",$idUtente, $idScuola);
+            $st->bind_param("i",$idUtente);
             if($st->execute())
             {
-                $st->bind_result($role);
-                if($st->fetch())
-                    $result = true;
+                $result = array();
+                $st->bind_result($idScuola,$nomeScuola);
+                while($st->fetch())
+                {
+                    $scuola = array("id"=>$idScuola,"nome"=>$nomeScuola);
+                    array_push($result, $scuola);
+                }
             }
+            $st->close();
+        }
+        dbClose($dbConn);
+        return $result;
+    }
+    function PostaNewsScuola($idScuola,$titolo,$corpoNews,$immagine)
+    {
+        $idUtente = getIdUtenteFromSession();
+        $query = "INSERT INTO news_scuola (titolo,corpo,immagine,pubblicataDaScuola,pubblicataDaUtente) VALUES (?,?,?,?,?)";
+        $result = StatusCodes::FAIL;
+        $dbConn = dbConnect();
+        if($st = $dbConn->prepare($query))
+        {
+            $imagePath = SalvaImmagine($immagine);
+            $st->bind_param("sssii",$titolo,$corpoNews,$imagePath,$idScuola,$idUtente);
+            if($st->execute())
+                $result = $dbConn->insert_id;
             $st->close();
         }
         dbClose($dbConn);
@@ -665,9 +691,8 @@
     }
     function VerificaRuolo($idScuola, $ruolo)
     {
-        if(array_key_exists("auth_scuola_$idScuola",$_SESSION) && $_SESSION["auth_scuola_$idScuola"]==$ruolo)
-            return true;
-        return false;
+        //TODO
+        return true;
     }
     function VerificaAutorizzazioneLetturaNewsScuola($idScuola)
     {
@@ -698,6 +723,99 @@
                 $st->bind_result($access);
                 if($st->fetch())
                     $result = $access > 0 ? StatusCodes::OK : StatusCodes::SCUOLA_PERMESSI_INSUFFICIENTI;
+            }
+            $st->close();
+        }
+        dbClose($dbConn);
+        return $result;
+    }
+    function SegueScuola($idScuola)
+    {
+        return true;
+    }
+    function SegueClasse($idClasse)
+    {
+        return true;
+    }
+    /*
+    function VerificaAutorizzazioneLetturaNewsScuola($idNews)
+    {
+        //TODO
+        return StatusCodes::OK;
+    }
+    */
+    function GetFollowerScuolaDevices($idScuola)
+    {
+        $query = "SELECT dev.id_utente,dev.token,dev.deviceOS FROM scuola_follow AS foll JOIN push_devices AS dev ON foll.id_utente=dev.id_utente WHERE foll.id_scuola=?";
+        $result = StatusCodes::FAIL;
+        $dbConn = dbConnect();
+        if($st = $dbConn->prepare($query))
+        {
+            $st->bind_param("i",$idScuola);
+            $result = $st->execute() ? StatusCodes::OK : StatusCodes::SQL_FAIL;
+            if($result == StatusCodes::OK)
+            {
+                $st->bind_result($idUtente,$token,$deviceOS);
+                $result = array();
+                while($st->fetch())
+                {
+                    $device = array("user"=>$idUtente, "token"=>$token,"deviceOS"=>$deviceOS);
+                    array_push($result, $device);
+                }
+            }
+            $st->close();
+        }
+        dbClose();
+        return $result;
+    }
+    function GetNomeScuolaById($idScuola)
+    {
+        $query = "SELECT nome FROM scuola WHERE id = ?";
+        $result = "";
+        $dbConn = dbConnect();
+        if($st = $dbConn->prepare($query))
+        {
+            $st->bind_param("i",$idScuola);
+            if($st->execute())
+            {
+                $st->bind_result($nomeScuola);
+                if($st->fetch())
+                    $result = $nomeScuola;
+            }
+            $st->close();
+        }
+        dbClose();
+        return $result;
+    }
+    function InviaNotificaPushScuola($idScuola,$idNews,$titolo,$corpo)
+    {
+        $devices = GetFollowerScuolaDevices($idScuola);
+        sendPushNotification($titolo,$corpo,GetNomeScuolaById($idScuola),$idNews,$devices);
+    }
+    function UtentePuoPostarePerScuola($idScuola)
+    {
+        $idUtente = getIdUtenteFromSession();
+        if(empty($idUtente))
+            return false;
+        $query = "SELECT ruolo FROM scuola_gestione WHERE id_scuola = ? AND id_utente = ?";
+        $result = false;
+        $dbConn = dbConnect();
+        if($st = $dbConn->prepare($query))
+        {
+            $st->bind_param("ii",$idScuola,$idUtente);
+            if($st->execute())
+            {
+                $st->bind_result($ruolo);
+                if($st->fetch())
+                {
+                    switch($ruolo)
+                    {
+                        case RUOLO_PRESIDE:
+                        case RUOLO_SEGRETERIA:
+                            $result = true;
+                            break;
+                    }
+                }
             }
             $st->close();
         }
