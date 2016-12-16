@@ -398,6 +398,7 @@
                     array_push($result, $scuola);
                 }
             }
+            $st->close();
         }
         dbClose($dbConn);
         return $result;
@@ -421,6 +422,7 @@
                     array_push($result, $scuola);
                 }
             }
+            $st->close();
         }
         dbClose($dbConn);
         return $result;
@@ -449,7 +451,8 @@
                 }
                 else
                     $result = StatusCodes::SCUOLA_USERNAME_NON_VALIDO;
-            } 
+            }
+            $st->close();
         }
         dbClose($dbConn);
         return $result;
@@ -689,21 +692,44 @@
         dbClose($dbConn);
         return $result;
     }
-    function VerificaRuolo($idScuola, $ruolo)
-    {
-        //TODO
-        return true;
-    }
-    function VerificaAutorizzazioneLetturaNewsScuola($idScuola)
+    function VerificaRuolo($idScuola, $ruoli)
     {
         $idUtente = getIdUtenteFromSession();
-        $query = "SELECT * FROM scuola_follow WHERE id_utente = ? AND id_scuola = ?";
+        $query = "SELECT ruolo FROM scuola_gestione WHERE id_scuola = ? AND id_utente = ?";
+        $result = false;
+        $dbConn = dbConnect();
+        if($st = $dbConn->prepare($query))
+        {
+            $st->bind_param("ii",$idScuola,$idUtente);
+            if($st->execute())
+            {
+                $st->bind_result($ruoloFound);
+                if($st->fetch())
+                {
+                    $found = array_filter($ruoli, function($item) {return $item==$ruoloFound;} );
+                    $result = count($found) > 0;
+                }
+            }
+            $st->close();
+        }
+        dbClose($dbConn);
+        return $result;
+    }
+    function VerificaAutorizzazioneLetturaNewsScuola($idNews)
+    {
+        $idUtente = getIdUtenteFromSession();
+        $query = "SELECT COUNT(*) FROM news_scuola AS ns JOIN scuola_follow AS sf ON ns.pubblicataDaScuola=sf.id_scuola WHERE sf.id_utente=? AND ns.id=?";
         $result = StatusCodes::FAIL;
         $dbConn = dbConnect();
         if($st = $dbConn->prepare($query))
         {
-            $st->bind_param("ii",$idUtente,$idScuola);
-            $result = $st->execute() && $st->fetch() ? StatusCodes::OK : StatusCodes::SCUOLA_PERMESSI_INSUFFICIENTI;
+            $st->bind_param("ii", $idUtente,$idNews);
+            if($st->execute())
+            {
+                $st->bind_result($count);
+                if($st->fetch())
+                    $result = $count > 0 ? StatusCodes::OK : StatusCodes::SCUOLA_PERMESSI_INSUFFICIENTI;
+            }
             $st->close();
         }
         dbClose($dbConn);
@@ -737,13 +763,6 @@
     {
         return true;
     }
-    /*
-    function VerificaAutorizzazioneLetturaNewsScuola($idNews)
-    {
-        //TODO
-        return StatusCodes::OK;
-    }
-    */
     function GetFollowerScuolaDevices($idScuola)
     {
         $query = "SELECT dev.id_utente,dev.token,dev.deviceOS FROM scuola_follow AS foll JOIN push_devices AS dev ON foll.id_utente=dev.id_utente WHERE foll.id_scuola=?";

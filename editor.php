@@ -936,7 +936,7 @@
             }
             $st->close();
         }
-        dbClose();
+        dbClose($dbConn);
         return $result;
     }
     function GetEditorNomeById($idEditor)
@@ -955,7 +955,7 @@
             }
             $st->close();
         }
-        dbClose();
+        dbClose($dbConn);
         return $result;
     }
     function InviaNotificaPush($idEditor,$titolo,$corpo,$id_news)

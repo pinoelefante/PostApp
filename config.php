@@ -9,5 +9,5 @@
 	define('SUPER_READER_ID', 1);
     define('PANNELLO_ADMIN', 'http://google.it');
 
-    define('GOOGLE_API_KEY','AIzaSyCSGd4GdrnFRIPObDgEyVZF4KfKc-oPmQo');
+    define('GOOGLE_API_KEY','AIzaSyBHSBxyA02m_v1VsXIDpy8Hrowu0rYbiPs');
 ?>
