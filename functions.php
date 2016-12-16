@@ -88,22 +88,73 @@
     //ritorna percorso salvataggio immagine
     function SalvaImmagine($immagine, $folder = "images")
     {
+        if(empty($immagine))
+            return NULL;
+
         if(empty($folder))
             $folder = "images";
             
         $result = NULL;
+        $closed = false;
         if(!empty($immagine))
         {
-            mkdir($folder, 0664, true); // 0664 = lettura/scrittura proprietario&gruppo, lettura utenti
-            $fileBytes = base64_decode($file);
+            @mkdir($folder, 0664, true); // 0664 = lettura/scrittura proprietario&gruppo, lettura utenti
+            $fileBytes = base64_decode($immagine);
             $filename = GeneraUniqueFileName($folder, "IMG");
             $fp = fopen("./$folder/$filename", "wb");
             if(fwrite($fp, $fileBytes))
+            {
+                $closed = fclose($fp);
                 $result = "$folder/$filename";
-            fclose($fp);
+                $ext = GetFileExtension("./$folder/$filename");
+                if(IsImage($ext) && rename("./$folder/$filename", "./$folder/$filename$ext"))
+                    $result = "$result$ext";
+                else //il file non è un'immagine valida
+                {
+                    if(!unlink("./$result"))
+                        sendEmailAdmin("[PostApp] File non valido","E' stato caricato un file che non è un'immagine ma non è stato possibile cancellarlo\n<br>Nome file: $result");
+                    $result = NULL;
+                }
+            }
+            if(!$closed)
+                fclose($fp);
             
         }
         return $result;
+    }
+    function GetFileExtension($filepath)
+    {
+        $mime = mime_content_type($filepath);
+        switch($mime)
+        {
+            case "image/jpeg":
+                return ".jpg";
+            case "image/png":
+                return ".png";
+            case "image/gif":
+                return ".gif";
+            case "image/bmp":
+                return ".bmp";
+
+            case "application/pdf":
+                return ".pdf";
+            /*
+            case "":
+                return "";
+            */
+        }
+    }
+    function IsImage($extension)
+    {
+        switch($extension)
+        {
+            case ".jpg":
+            case ".png":
+            case ".gif":
+            case ".bmp":
+                return true;
+        }
+        return false;
     }
     function GeneraUniqueFileName($folder, $prefix = "IMG")
 	{

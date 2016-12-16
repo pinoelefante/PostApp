@@ -1,6 +1,9 @@
 <?php
     abstract class StatusCodes extends BasicEnum
     {
+        //ENVELOP_UNSET non è mai inviato dal server ma è utilizzato soltanto all'interno dell'applicazione
+        const ENVELOP_UNSET = 0;
+
         const FAIL = -1;
         const RICHIESTA_MALFORMATA = -2;
         const METODO_ASSENTE = -3;

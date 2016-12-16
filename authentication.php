@@ -33,9 +33,13 @@
 			$responseCode = Access($code);
 			break;
 		case "CambiaLocalita":
-			//TODO: cambia localita di residenza dell'utente
+			if(isLogged(true))
+			{
+				$localita = getParameter("localita", true);
+				//TODO: cambia localita di residenza dell'utente
+			}
 			break;
-		case "RipristinaUtente":
+		case "RipristinaUtente": //eliminare se si passa ad autenticazione con username e password
 			//TODO: cancellare utente corrente
 			//		effettuare accesso con nuovo utente
 			break;
