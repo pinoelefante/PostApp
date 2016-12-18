@@ -796,7 +796,7 @@
     }
     function UsaCodiceFamiglia($idCodice,$ruolo,$nome,$cognome,$data)
     {
-        $querySelectCodice = "SELECT id_scuola,id_classe FROM scuola_codice_famiglia WHERE id_codice = ? AND alunno_nome = ? AND alunno_cognome = ? AND alunno_nascita = ?";
+        $query = "SELECT id_scuola,id_classe FROM scuola_codice_famiglia WHERE id_codice = ? AND alunno_nome = ? AND alunno_cognome = ? AND alunno_nascita = ?";
         $dbConn = dbConnect();
         $result = StatusCodes::FAIL;
         if($st = $dbConn->prepare($query))
@@ -816,6 +816,7 @@
             }
             $st->close();
         }
+        return $result;
     }
     function InserisciUtilizzoCodiceFamiglia($idCodice,$ruolo)
     {
