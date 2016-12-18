@@ -75,11 +75,10 @@
             return;
         //https://arjunkr.quora.com/How-to-Windows-10-WNS-Windows-Notification-Service-via-PHP
     }
-
-    function testAndroidEmulatorPush()
+    function SendNotificationAllUsers($titolo,$testo,$autore,$id_news)
     {
         $registrationIds = GetAllDevices();
-        sendPushNotification("titolo prova", "corpo prova", "autore prova",0, $registrationIds);
+        sendPushNotification($titolo, $testo, $autore,$id_news, $registrationIds);
     }
     function GetAllDevices()
     {
@@ -102,5 +101,5 @@
         dbClose($dbConn);
         return $result;
     }
-    //testAndroidEmulatorPush();
+    //SendNotificationAllUsers("Test push notifications","E' solo un test'","PostAppDeveloper",0);
 ?>

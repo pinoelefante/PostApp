@@ -16,7 +16,9 @@
     {
         if(isset($_SESSION["idUtente"]))
             return $_SESSION["idUtente"];
-        return NULL;
+            
+        sendResponse(StatusCodes::LOGIN_NON_LOGGATO, "");
+        die();
     }
     function getParameter($par,$required = false)
     {
@@ -27,6 +29,10 @@
         if($required)
         {
             sendResponse(StatusCodes::RICHIESTA_MALFORMATA, "$par is required");
+            $action = getParameter("action");
+            $debug = GetDebugMessage();
+            $corpoMail = "Il server ha ricevuto una richiesta malformata. Ecco la richiesta:\n\n<br><br>$debug";
+            sendEmailAdmin("[PostApp] Richiesta malformata - action = $action",$corpoMail);
             die();
         }
         return NULL;
@@ -48,6 +54,12 @@
                        'content' => empty($content) ? "" : $content );
         header('Content-Type: application/json');
         echo json_encode($array);
+        if($response<0)
+        {
+            $debug = GetDebugMessage();
+            $corpoMail = "E' stata rilevata una richiesta fallita al server ($response). Ecco la richiesta\n\n<br><br>$debug";
+            sendEmailAdmin("[PostApp] Richiesta fallita",$corpoMail);
+        }
     }
     function sendPOSTRequest($url, $data)
     {
@@ -168,9 +180,7 @@
 	}
     function hashPassword($password)
     {
-        $options = array(
-            'cost' => 10,
-        );
+        $options = array('cost' => HASH_COST_TIME);
         return password_hash($password, PASSWORD_BCRYPT, $options);
     }
     function costTimeHashPassword($timeTarget = 0.05 /*50ms*/)
@@ -187,5 +197,26 @@
         } while (($end - $start) < $timeTarget);
 
         return $cost;
+    }
+    function GetQRCode($code, $dim = "360x360")
+    {
+        return "https://chart.googleapis.com/chart?cht=qr&chl=$code&chs=$dim&choe=UTF-8&chld=L|2";
+    }
+    function GetDebugMessage()
+    {
+        $idUtente = getIdUtenteFromSession();
+        $remoteAddr = $_SERVER['REMOTE_ADDR'];
+        //TODO aggiungere array GET
+        //TODO aggiungere array POST
+        //TODO aggiungere array SERVER
+        //http://stackoverflow.com/questions/15699101/get-the-client-ip-address-using-php
+        //TODO aggiungere array SESSION
+        $message = "ID Utente: $idUtente<br>IP Address: $remoteAddr<br>";
+        return $message;
+    }
+    function GeneraCodice($prefix = "", $appendix = "")
+    {
+        $code = uniqid($prefix, false).$appendix;
+        return $code;
     }
 ?>

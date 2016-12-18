@@ -20,7 +20,7 @@
         const EDITOR_IMPOSSIBILE_ASSEGNARE_AMMINISTRATORE = 50;
         const EDITOR_ERRORE_CREAZIONE = 51;
         const EDITOR_UTENTE_NON_AUTORIZZATO = 52;
-        const EDITOR_SEGUI_GIA = 53;
+        const SEGUI_GIA = 53;
         const NEWS_GIA_RINGRAZIATO = 54;
         const EDITOR_NEWS_NON_TROVATA = 55;
         const NEWS_GIA_LETTA = 56;
@@ -35,6 +35,12 @@
         const SCUOLA_PLESSO_NON_PRESENTE = 65;
         const SCUOLA_GRADO_DUPLICATO = 66;
         const SCUOLA_ERRORE_INSERIMENTO_SEZIONE = 67;
+
+        const CODICE_INVALIDO = 90;
+        const CODICE_USATO = 91;
+        const CODICE_GIA_IN_USO = 92;
+        const CODICE_MAI_USATO = 93;
+        const CODICE_CAMPI_INVALIDI = 94;
 
         const NEWS_COMMON_TIPO_NEWS_INVALIDO = 80;
     }

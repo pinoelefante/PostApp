@@ -443,7 +443,7 @@
         if($st = $dbConn->prepare($query))
         {
             $st->bind_param("ii", $idUtente,$idEditor);
-            $result = $st->execute() ? StatusCodes::OK : StatusCodes::EDITOR_SEGUI_GIA;
+            $result = $st->execute() ? StatusCodes::OK : StatusCodes::SEGUI_GIA;
             $st->close();
         }
         dbClose($dbConn);

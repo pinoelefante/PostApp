@@ -4,6 +4,8 @@
     define('DBUSER', 'root');
     define('DBPASS', '');
     
+    define('HASH_COST_TIME', 10);
+
     define('ADMIN_EMAIL', 'pinoelefante@hotmail.it');
     define('SUPER_READER_ENABLED', 0);
 	define('SUPER_READER_ID', 1);

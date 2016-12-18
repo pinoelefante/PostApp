@@ -2,7 +2,7 @@
 -- Host:                         127.0.0.1
 -- Versione server:              10.1.16-MariaDB - mariadb.org binary distribution
 -- S.O. server:                  Win32
--- HeidiSQL Versione:            9.4.0.5137
+-- HeidiSQL Versione:            9.4.0.5142
 -- --------------------------------------------------------
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
@@ -160,6 +160,17 @@ CREATE TABLE IF NOT EXISTS `news_scuola_classe` (
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- L’esportazione dei dati non era selezionata.
+-- Dump della struttura di tabella postapp.news_scuola_classe_confermalettura
+CREATE TABLE IF NOT EXISTS `news_scuola_classe_confermalettura` (
+  `id_utente` int(11) unsigned NOT NULL,
+  `id_news` int(11) unsigned NOT NULL,
+  PRIMARY KEY (`id_utente`,`id_news`),
+  KEY `FK_news_scuola_classe_confermalettura_news_scuola` (`id_news`),
+  CONSTRAINT `FK_news_scuola_classe_confermalettura_news_scuola` FOREIGN KEY (`id_news`) REFERENCES `news_scuola` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `FK_news_scuola_classe_confermalettura_utente` FOREIGN KEY (`id_utente`) REFERENCES `utente` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+-- L’esportazione dei dati non era selezionata.
 -- Dump della struttura di tabella postapp.news_scuola_classe_destinatario
 CREATE TABLE IF NOT EXISTS `news_scuola_classe_destinatario` (
   `id_news` int(11) unsigned NOT NULL,
@@ -194,6 +205,29 @@ CREATE TABLE IF NOT EXISTS `news_scuola_classe_thankyou` (
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- L’esportazione dei dati non era selezionata.
+-- Dump della struttura di tabella postapp.news_scuola_confermalettura
+CREATE TABLE IF NOT EXISTS `news_scuola_confermalettura` (
+  `id_utente` int(11) unsigned NOT NULL,
+  `id_news` int(11) unsigned NOT NULL,
+  PRIMARY KEY (`id_utente`,`id_news`),
+  KEY `FK_news_scuola_confermalettura_news_scuola` (`id_news`),
+  CONSTRAINT `FK_news_scuola_confermalettura_news_scuola` FOREIGN KEY (`id_news`) REFERENCES `news_scuola` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `FK_news_scuola_confermalettura_utente` FOREIGN KEY (`id_utente`) REFERENCES `utente` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+-- L’esportazione dei dati non era selezionata.
+-- Dump della struttura di tabella postapp.news_scuola_destinatario
+CREATE TABLE IF NOT EXISTS `news_scuola_destinatario` (
+  `id_scuola` int(11) unsigned NOT NULL,
+  `id_news` int(11) unsigned NOT NULL,
+  `ruolo` varchar(10) NOT NULL,
+  PRIMARY KEY (`id_scuola`,`id_news`,`ruolo`),
+  KEY `FK_news_scuola_destinatario_news_scuola` (`id_news`),
+  CONSTRAINT `FK_news_scuola_destinatario_news_scuola` FOREIGN KEY (`id_news`) REFERENCES `news_scuola` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `FK_news_scuola_destinatario_scuola` FOREIGN KEY (`id_scuola`) REFERENCES `scuola` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+-- L’esportazione dei dati non era selezionata.
 -- Dump della struttura di tabella postapp.news_scuola_letta
 CREATE TABLE IF NOT EXISTS `news_scuola_letta` (
   `id_news` int(11) unsigned NOT NULL,
@@ -219,9 +253,8 @@ CREATE TABLE IF NOT EXISTS `news_scuola_thankyou` (
 -- Dump della struttura di tabella postapp.push_devices
 CREATE TABLE IF NOT EXISTS `push_devices` (
   `id_utente` int(11) unsigned NOT NULL,
-  `token` varchar(767) NOT NULL,
+  `token` text NOT NULL,
   `deviceOS` tinyint(3) unsigned NOT NULL COMMENT '1 android; 2 ios; 3 windows 10;',
-  UNIQUE KEY `token` (`token`),
   KEY `FK_push_devices_utente` (`id_utente`),
   CONSTRAINT `FK_push_devices_utente` FOREIGN KEY (`id_utente`) REFERENCES `utente` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
@@ -267,7 +300,7 @@ CREATE TABLE IF NOT EXISTS `scuola_classe` (
 CREATE TABLE IF NOT EXISTS `scuola_classe_follow` (
   `id_utente` int(11) unsigned NOT NULL,
   `id_classe` int(11) unsigned NOT NULL,
-  `ruolo` varchar(3) NOT NULL,
+  `ruolo` varchar(10) NOT NULL,
   PRIMARY KEY (`id_utente`,`id_classe`,`ruolo`),
   KEY `FK_scuola_classe_follow_scuola_classe` (`id_classe`),
   CONSTRAINT `FK_scuola_classe_follow_scuola_classe` FOREIGN KEY (`id_classe`) REFERENCES `scuola_classe` (`id_classe`) ON DELETE CASCADE ON UPDATE CASCADE,
@@ -300,6 +333,7 @@ CREATE TABLE IF NOT EXISTS `scuola_codice_famiglia` (
 CREATE TABLE IF NOT EXISTS `scuola_codice_famiglia_uso` (
   `id_utente` int(11) unsigned NOT NULL,
   `id_codice` int(11) unsigned NOT NULL,
+  `ruolo` varchar(10) NOT NULL,
   PRIMARY KEY (`id_utente`,`id_codice`),
   KEY `FK_scuola_codice_uso_scuola_codice` (`id_codice`),
   CONSTRAINT `FK_scuola_codice_uso_scuola_codice` FOREIGN KEY (`id_codice`) REFERENCES `scuola_codice_famiglia` (`id_codice`) ON DELETE CASCADE ON UPDATE CASCADE,
@@ -311,7 +345,8 @@ CREATE TABLE IF NOT EXISTS `scuola_codice_famiglia_uso` (
 CREATE TABLE IF NOT EXISTS `scuola_follow` (
   `id_utente` int(11) unsigned NOT NULL,
   `id_scuola` int(11) unsigned NOT NULL,
-  PRIMARY KEY (`id_utente`,`id_scuola`),
+  `ruolo` varchar(10) NOT NULL DEFAULT 'genitore',
+  PRIMARY KEY (`id_utente`,`id_scuola`,`ruolo`),
   KEY `FK_scuola_follow_scuola` (`id_scuola`),
   CONSTRAINT `FK_scuola_follow_scuola` FOREIGN KEY (`id_scuola`) REFERENCES `scuola` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `FK_scuola_follow_utente` FOREIGN KEY (`id_utente`) REFERENCES `utente` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
@@ -361,10 +396,15 @@ CREATE TABLE IF NOT EXISTS `scuola_plesso` (
 -- Dump della struttura di tabella postapp.utente
 CREATE TABLE IF NOT EXISTS `utente` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-  `codice_utente` varchar(17) NOT NULL,
-  `comune_residenza` varchar(7) DEFAULT NULL,
-  `email` varchar(64) DEFAULT NULL,
+  `codice_utente` varchar(17) NOT NULL COMMENT '? da deprecare in favore di username e password',
   `data_registrazione` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `username` varchar(16) NOT NULL COMMENT 'non in uso',
+  `password` varchar(60) NOT NULL COMMENT 'non in uso',
+  `nome` varchar(20) DEFAULT NULL COMMENT 'non in uso',
+  `cognome` varchar(20) DEFAULT NULL COMMENT 'non in uso',
+  `nascita` date DEFAULT NULL COMMENT 'non in uso',
+  `email` varchar(64) DEFAULT NULL COMMENT 'non in uso',
+  `comune_residenza` varchar(7) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `codice_utente` (`codice_utente`),
   KEY `FK_utente_comune` (`comune_residenza`),

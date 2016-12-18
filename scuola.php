@@ -193,7 +193,14 @@
         case "SbloccaCodice":
             if(isLogged(true))
             {
-                //TODO
+                $codice = getParameter("codice", true);
+                if(($responseCode = VerificaCodice($codice))==StatusCodes::OK)
+                {
+                    $nome = getParameter("nome", true);
+                    $cognome = getParameter("cognome", true);
+                    $nascita = getParameter("nascita", true);
+                    $responseCode = SbloccaCodice($codice, $nome,$cognome,$nascita);
+                }
             }
             break;
         case "PostaNewsScuola":
@@ -205,11 +212,12 @@
                     $titolo = getParameter("titolo", true);
                     $corpoNews = getParameter("corpo", true);
                     $immagine = getParameter("image");
-                    $idNews = $responseCode = PostaNewsScuola($idScuola,$titolo,$corpoNews,$immagine);
+                    $destinatari = getParameter("destinatari", true);
+                    $idNews = $responseCode = PostaNewsScuola($idScuola,$titolo,$corpoNews,$immagine,$destinatari);
                     if($idNews > 0)
                     {
                         $responseCode = StatusCodes::OK;
-                        InviaNotificaPushScuola($idScuola,$idNews,$titolo,$corpoNews);
+                        InviaNotificaPushScuola($idScuola,$idNews,$titolo,$corpoNews, $destinatari);
                     }
                 }
                 else
@@ -675,7 +683,7 @@
         dbClose($dbConn);
         return $result;
     }
-    function PostaNewsScuola($idScuola,$titolo,$corpoNews,$immagine)
+    function PostaNewsScuola($idScuola,$titolo,$corpoNews,$immagine,$destinatari)
     {
         $idUtente = getIdUtenteFromSession();
         $query = "INSERT INTO news_scuola (titolo,corpo,immagine,pubblicataDaScuola,pubblicataDaUtente) VALUES (?,?,?,?,?)";
@@ -686,7 +694,221 @@
             $imagePath = SalvaImmagine($immagine);
             $st->bind_param("sssii",$titolo,$corpoNews,$imagePath,$idScuola,$idUtente);
             if($st->execute())
-                $result = $dbConn->insert_id;
+            {
+                $newsId = $result = $dbConn->insert_id;
+                InserisciDestinatariNewsScuola($newsId,$idScuola, $destinatati);
+            }
+            $st->close();
+        }
+        dbClose($dbConn);
+        return $result;
+    }
+    function InserisciDestinatariNewsScuola($idNews,$idScuola, $destinatati)
+    {
+        $query = "INSERT INTO news_scuola_destinatario (id_news,id_scuola,ruolo) VALUES (?,?,?)";
+        $dbConn = dbConnect();
+        if($st = $dbConn->prepare($query))
+        {
+            foreach($destinatari as $ruolo)
+            {
+                $st->bind_param("iis", $idNews,$idScuola,$ruolo);
+                $st->execute();
+            }
+            $st->close();
+        }
+        dbClose($dbConn);
+    }
+    function FollowScuola($idScuola,$ruolo = "genitore")
+    {
+        $idUtente = getIdUtenteFromSession();
+        $query = "INSERT INTO scuola_follow (id_utente,id_scuola,ruolo) VALUES (?,?,?)";
+        $result = StatusCodes::FAIL;
+        $dbConn = dbConnect();
+        if($st = $dbConn->prepare($query))
+        {
+            $st->bind_param("iis",$idUtente,$idScuola,$ruolo);
+            $result = $st->execute() ? StatusCodes::OK : StatusCodes::SEGUI_GIA;
+            $st->close();
+        }
+        dbClose($dbConn);
+        return $result;
+    }
+    function FollowClasse($idClasse, $ruolo = "genitore")
+    {
+        $idUtente = getIdUtenteFromSession();
+        $query = "INSERT INTO scuola_classe_follow (id_utente,id_classe,ruolo) VALUES (?,?,?)";
+        $result = StatusCodes::FAIL;
+        $dbConn = dbConnect();
+        if($st = $dbConn->prepare($query))
+        {
+            $st->bind_param("iis",$idUtente,$idClasse,$ruolo);
+            $result = $st->execute() ? StatusCodes::OK : StatusCodes::SEGUI_GIA;
+            $st->close();
+        }
+        dbClose($dbConn);
+        return $result;
+    }
+    function UnfollowScuola($idScuola, $ruolo = "genitore")
+    {
+        $idUtente = getIdUtenteFromSession();
+        $query = "DELETE FROM scuola_follow WHERE id_utente = ? AND id_scuola = ? AND ruolo = ?";
+        $result = StatusCodes::FAIL;
+        $dbConn = dbConnect();
+        if($st = $dbConn->prepare($query))
+        {
+            $st->bind_param("iis",$idUtente,$idScuola,$ruolo);
+            $result = $st->execute() && $dbConn->affected_rows > 0 ? StatusCodes::OK : StatusCodes::FAIL;
+            $st->close();
+        }
+        dbClose($dbConn);
+        return $result;
+    }
+    function UnfollowClasse($idClasse, $ruolo = "genitore")
+    {
+        $idUtente = getIdUtenteFromSession();
+        $query = "DELETE FROM scuola_classe_follow WHERE id_utente = ? AND id_scuola = ? AND ruolo = ?";
+        $result = StatusCodes::FAIL;
+        $dbConn = dbConnect();
+        if($st = $dbConn->prepare($query))
+        {
+            $st->bind_param("iis",$idUtente,$idClasse,$ruolo);
+            $result = $st->execute() && $dbConn->affected_rows > 0 ? StatusCodes::OK : StatusCodes::FAIL;
+            $st->close();
+        }
+        dbClose($dbConn);
+        return $result;
+    }
+    function SbloccaCodice($codice, $nome,$cognome,$nascita)
+    {
+        $res = IsCodiceFamigliaGiaUtilizzato($codice);
+        if(is_array($res))
+        {
+            if($res["usatoUtente"])
+                return StatusCodes::CODICE_GIA_IN_USO;
+            if(!$res["usato"])
+            {
+                if(!AggiornaCampoCodice($res["id"],$nome,$cognome,$nascita))
+                    return StatusCodes::SQL_FAIL;
+            }
+            return UsaCodiceFamiglia($res["id"],$res["ruolo"],$nome,$cognome,$nascita);
+        }
+        return StatusCodes::CODICE_INVALIDO;
+    }
+    function UsaCodiceFamiglia($idCodice,$ruolo,$nome,$cognome,$data)
+    {
+        $querySelectCodice = "SELECT id_scuola,id_classe FROM scuola_codice_famiglia WHERE id_codice = ? AND alunno_nome = ? AND alunno_cognome = ? AND alunno_nascita = ?";
+        $dbConn = dbConnect();
+        $result = StatusCodes::FAIL;
+        if($st = $dbConn->prepare($query))
+        {
+            $st->bind_param("isss",$idCodice,$nome,$cognome,$data);
+            if($st->execute())
+            {
+                $st->bind_result($idScuola,$idClasse);
+                if($st->fetch()) //codice trovato e i nomi corrispondono
+                {
+                    $result = InserisciUtilizzoCodiceFamiglia($idCodice,$ruolo);
+                    FollowScuola($idScuola, $ruolo);
+                    FollowClasse($idClasse, $ruolo);
+                }
+                else
+                    $result = StatusCodes::CODICE_CAMPI_INVALIDI;
+            }
+            $st->close();
+        }
+    }
+    function InserisciUtilizzoCodiceFamiglia($idCodice,$ruolo)
+    {
+        $idUtente = getIdUtenteFromSession();
+        $query = "INSERT INTO scuola_codice_famiglia_uso (id_codice,id_utente,ruolo) VALUES (?,?,?)";
+        $result = StatusCodes::FAIL;
+        $dbConn = dbConnect();
+        if($st = $dbConn->prepare($query))
+        {
+            $st->bind_param("iis", $idCodice,$idUtente,$ruolo);
+            $result = $st->execute() ? StatusCodes::OK : StatusCodes::CODICE_GIA_IN_USO;
+            $st->close();
+        }
+        dbClose($dbConn);
+        return $result;
+    }
+    function GetRuoloDaSigla($sigla)
+    {
+        switch($sigla)
+        {
+            case "G":
+                return "genitore";
+            case "S":
+                return "studente";
+            case "D":
+                return "docente";
+            case "A":
+                return "ata";
+            case "P":
+                return "preside";
+        }
+        die(); //non si può arrivare in questo punto
+    }
+    function AggiornaCampoCodice($idCodice,$nome,$cognome,$data)
+    {
+        $query = "UPDATE scuola_codice_famiglia SET alunno_nome = ?, alunno_cognome = ?, alunno_nascita = ? WHERE id_codice = ?";
+        $result = false;
+        $dbConn = dbConnect();
+        if($st = $dbConn->prepare($query))
+        {
+            $st->bind_param("sssi",$nome,$cognome,$data,$idCodice);
+            $result = $st->execute();
+            $st->close();
+        }
+        dbClose($dbConn);
+        return $result;
+    }
+    function VerificaCodice($codice) //controllo formale del codice
+    {
+        if(strlen($codice) == 17)
+        {
+            if(substr($codice,0,3)=="STU")
+            {
+                $tipoCodice = substr($codice, 16, 1);
+                switch($tipoCodice)
+                {
+                    case "G": //genitore
+                    case "S": //studente
+                    case "D": //docente
+                    case "A": //ata
+                    case "P": //preside
+                        return StatusCodes::OK;
+                }
+            }
+        }
+        return StatusCodes::CODICE_INVALIDO;
+    }
+    function IsCodiceFamigliaGiaUtilizzato($codice)
+    {
+        $idUtente = getIdUtenteFromSession();
+        $tipo = substr($codice, 16, 1);
+        switch($tipo)
+        {
+            case "G":
+                $query = "SELECT id_codice, (!ISNULL(alunno_nome) AND !ISNULL(alunno_cognome) AND !ISNULL(alunno_nascita)) AS usato, (SELECT COUNT(*) FROM scuola_codice_famiglia_uso WHERE id_codice=cod.id_codice AND ruolo = ?) AS usatoUtente FROM scuola_codice_famiglia AS cod WHERE codice_genitore = ?";
+                break;
+            case "S":
+                $query = "SELECT id_codice, (!ISNULL(alunno_nome) AND !ISNULL(alunno_cognome) AND !ISNULL(alunno_nascita)) AS usato, (SELECT COUNT(*) FROM scuola_codice_famiglia_uso WHERE id_codice=cod.id_codice AND ruolo = ?) AS usatoUtente FROM scuola_codice_famiglia AS cod WHERE codice_studente = ?";
+                break;
+            default:
+                return StatusCodes::CODICE_INVALIDO;
+        }
+        $result = StatusCodes::FAIL;
+        $dbConn = dbConnect();
+        if($st = $dbConn->prepare($query))
+        {
+            $st->bind_param("ss",$tipo,$codice);
+            if($st->execute())
+            {
+                $st->bind_result($idCodice, $usato, $usatoUtente);
+                if($st->fetch())
+                    $result = array("id"=>$idCodice, "usato"=>$usato, "usatoUtente"=>$usatoUtente,"ruolo"=>GetRuoloDaSigla($tipo));
+            }
             $st->close();
         }
         dbClose($dbConn);
@@ -763,9 +985,9 @@
     {
         return true;
     }
-    function GetFollowerScuolaDevices($idScuola)
+    function GetFollowerScuolaDevices($idScuola, $destinatari)
     {
-        $query = "SELECT dev.id_utente,dev.token,dev.deviceOS FROM scuola_follow AS foll JOIN push_devices AS dev ON foll.id_utente=dev.id_utente WHERE foll.id_scuola=?";
+        $query = "SELECT dev.id_utente,dev.token,dev.deviceOS.foll.ruolo FROM scuola_follow AS foll JOIN push_devices AS dev ON foll.id_utente=dev.id_utente WHERE foll.id_scuola=?";
         $result = StatusCodes::FAIL;
         $dbConn = dbConnect();
         if($st = $dbConn->prepare($query))
@@ -774,12 +996,15 @@
             $result = $st->execute() ? StatusCodes::OK : StatusCodes::SQL_FAIL;
             if($result == StatusCodes::OK)
             {
-                $st->bind_result($idUtente,$token,$deviceOS);
+                $st->bind_result($idUtente,$token,$deviceOS,$ruolo);
                 $result = array();
                 while($st->fetch())
                 {
-                    $device = array("user"=>$idUtente, "token"=>$token,"deviceOS"=>$deviceOS);
-                    array_push($result, $device);
+                    if(count(array_filter($destinatari, function($item) { $item==$ruolo; })) > 0)
+                    {
+                        $device = array("user"=>$idUtente, "token"=>$token,"deviceOS"=>$deviceOS);
+                        array_push($result, $device);
+                    }
                 }
             }
             $st->close();
@@ -806,39 +1031,13 @@
         dbClose();
         return $result;
     }
-    function InviaNotificaPushScuola($idScuola,$idNews,$titolo,$corpo)
+    function InviaNotificaPushScuola($idScuola,$idNews,$titolo,$corpo,$destinatari)
     {
-        $devices = GetFollowerScuolaDevices($idScuola);
+        $devices = GetFollowerScuolaDevices($idScuola, $destinatari);
         sendPushNotification($titolo,$corpo,GetNomeScuolaById($idScuola),$idNews,$devices);
     }
     function UtentePuoPostarePerScuola($idScuola)
     {
-        $idUtente = getIdUtenteFromSession();
-        if(empty($idUtente))
-            return false;
-        $query = "SELECT ruolo FROM scuola_gestione WHERE id_scuola = ? AND id_utente = ?";
-        $result = false;
-        $dbConn = dbConnect();
-        if($st = $dbConn->prepare($query))
-        {
-            $st->bind_param("ii",$idScuola,$idUtente);
-            if($st->execute())
-            {
-                $st->bind_result($ruolo);
-                if($st->fetch())
-                {
-                    switch($ruolo)
-                    {
-                        case RUOLO_PRESIDE:
-                        case RUOLO_SEGRETERIA:
-                            $result = true;
-                            break;
-                    }
-                }
-            }
-            $st->close();
-        }
-        dbClose($dbConn);
-        return $result;
+        return VerificaRuolo($idScuola, array(RUOLO_PRESIDE,RUOLO_SEGRETERIA));
     }
 ?>
