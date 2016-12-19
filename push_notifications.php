@@ -4,6 +4,7 @@
     define("WIN10_DEVICE", 3);
     require_once('config.php');
     require_once('functions.php');
+    require_once("logger.php");
 
     function sendPushNotification($titolo,$corpo,$autore,$id_news,$devices)
     {
@@ -26,6 +27,7 @@
     function elaborateResponseAndroid($response)
     {
         //echo $response;
+        LogMessage("GCM response: $response");
     }
     function sendPush_Android($id_news, $titolo, $anteprima, $autore, $devices)
     {

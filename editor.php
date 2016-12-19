@@ -5,6 +5,7 @@
     require_once("functions.php");
     require_once("news_common.php");
     require_once("push_notifications.php");
+    require_once("logger.php");
     
     $action = getParameter("action", true);
     $responseCode = StatusCodes::FAIL;
@@ -960,7 +961,9 @@
     }
     function InviaNotificaPush($idEditor,$titolo,$corpo,$id_news)
     {
+        LogMessage("Mi preparo ad inviare notifica push per news id: $id_news");
         $devices = GetUtentiSeguonoEditorNotificabili($idEditor);
+        LogMessage("Device count: "+count($devices));
         sendPushNotification($titolo,$corpo,GetEditorNomeById($idEditor),$id_news,$devices);
     }
 ?>

@@ -190,7 +190,7 @@
                 }
             }
             break;
-        case "SbloccaCodice":
+        case "SbloccaCodiceFamiglia":
             if(isLogged(true))
             {
                 $codice = getParameter("codice", true);

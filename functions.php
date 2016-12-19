@@ -1,6 +1,7 @@
 <?php
     require_once("config.php");
     require_once("enums.php");
+    require_once("logger.php");
 
     function isLogged($required = false)
     {

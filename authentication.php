@@ -48,7 +48,8 @@
 			{
 				$token = getParameter("token", true);
 				$deviceType = getParameter("deviceOS", true);
-				$responseCode = RegistraDevice($token, $deviceType);
+				$deviceId = getParameter("deviceId", true);
+				$responseCode = RegistraDevice($token, $deviceType,$deviceId);
 			}
 			break;
 		case "UnregisterPush":
@@ -56,7 +57,8 @@
 			{
 				$token = getParameter("token", true);
 				$deviceType = getParameter("deviceOS", true);
-				$responseCode = UnRegistraDevice($token, $deviceType);
+				$deviceId = getParameter("deviceId", true);
+				$responseCode = UnRegistraDevice($token, $deviceType,$deviceId);
 			}
 			break;
         default:
@@ -145,30 +147,30 @@
 		dbClose($dbConn);
 		return $result;
 	}
-	function RegistraDevice($token, $device)
+	function RegistraDevice($token, $device, $deviceId)
 	{
 		$idUtente = getIdUtenteFromSession();
-		$query = "INSERT INTO push_devices (id_utente,token,deviceOS) VALUES (?,?,?)";
+		$query = "INSERT INTO push_devices (id_utente,token,deviceOS,deviceId) VALUES (?,?,?,?)";
 		$dbConn = dbConnect();
 		$result = StatusCodes::FAIL;
 		if($st = $dbConn->prepare($query))
 		{
-			$st->bind_param("isi",$idUtente,$token,$device);
+			$st->bind_param("isis",$idUtente,$token,$device,$deviceId);
 			$result = $st->execute() ? StatusCodes::OK : StatusCodes::FAIL;
             $st->close();
 		}
 		dbClose($dbConn);
 		return $result;
 	}
-	function UnRegistraDevice($token, $device)
+	function UnRegistraDevice($token, $device,$deviceId)
 	{
 		$idUtente = getIdUtenteFromSession();
-		$query = "DELETE FROM push_devices WHERE id_utente=? AND token=? AND deviceOS=?";
+		$query = "DELETE FROM push_devices WHERE id_utente=? AND token=? AND deviceOS=? AND deviceId = ?";
 		$dbConn = dbConnect();
 		$result = StatusCodes::FAIL;
 		if($st = $dbConn->prepare($query))
 		{
-			$st->bind_param("isi",$idUtente,$token,$device);
+			$st->bind_param("isis",$idUtente,$token,$device,$deviceId);
 			$result = $st->execute() && $dbConn->affected_rows>0 ? StatusCodes::OK : StatusCodes::FAIL;
             $st->close();
 		}
