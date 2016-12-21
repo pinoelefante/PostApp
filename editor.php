@@ -427,7 +427,7 @@
         if($st = $dbConn->prepare($query))
         {
             $st->bind_param("iissss", $idEditor,$idUtente, $titolo, $corpo, $image_path, $posizione);
-            $result = $st->execute() ? StatusCodes::OK : StatusCodes::FAIL;
+            $result = $st->execute() ? StatusCodes::OK : StatusCodes::SQL_FAIL;
             if($result == StatusCodes::OK)
                 $result = $dbConn->insert_id;
             $st->close();

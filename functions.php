@@ -3,6 +3,8 @@
     require_once("enums.php");
     require_once("logger.php");
 
+    $requestId = LogRequest();
+
     function isLogged($required = false)
     {
         $sessionVer = sessionVerification();
@@ -41,11 +43,19 @@
     function dbConnect()
     {
         $mysqli = new mysqli(DBADDR, DBUSER, DBPASS, DBNAME);
+        if ($mysqli->connect_errno) 
+        {
+            LogMessage("(".$mysqli->connect_errno.") ".$mysqli->connect_error, "mysql.log");
+            sendResponse(StatusCodes::SQL_FAIL);
+            exit();
+        }
         $mysqli->set_charset("utf8");
         return $mysqli;
     }
     function dbClose($mysqli)
     {
+        if($mysqli->errno)
+            LogMessage("(".$mysqli->errno.") ".$mysqli->error, "mysql.log");
         $mysqli->close();
     }
     function sendResponse($response, $content = "")
@@ -54,7 +64,10 @@
                        'time' => date("Y-m-d H:i:s"),
                        'content' => empty($content) ? "" : $content );
         header('Content-Type: application/json');
-        echo json_encode($array);
+        $responseJson = json_encode($array);
+        LogResponse($responseJson, $GLOBALS['requestId']);
+        echo $responseJson;
+
         if($response<0)
         {
             $debug = GetDebugMessage();
@@ -99,29 +112,32 @@
         return false;
     }
     //ritorna percorso salvataggio immagine
-    function SalvaImmagine($immagine, $folder = "images")
+    function SalvaImmagine($immagineBytes, $folder = "images")
     {
-        if(empty($immagine))
+        if(empty($immagineBytes))
             return NULL;
 
-        if(empty($folder))
+        if(empty($folder) || strlen($folder) > 34) //nome file 30 + 34 path
             $folder = "images";
             
         $result = NULL;
         $closed = false;
-        if(!empty($immagine))
+        if(!empty($immagineBytes))
         {
             @mkdir($folder, 0664, true); // 0664 = lettura/scrittura proprietario&gruppo, lettura utenti
-            $fileBytes = base64_decode($immagine);
             $filename = GeneraUniqueFileName($folder, "IMG");
             $fp = fopen("./$folder/$filename", "wb");
-            if(fwrite($fp, $fileBytes))
+            if(fwrite($fp, $immagineBytes))
             {
                 $closed = fclose($fp);
                 $result = "$folder/$filename";
                 $ext = GetFileExtension("./$folder/$filename");
                 if(IsImage($ext) && rename("./$folder/$filename", "./$folder/$filename$ext"))
+                {
                     $result = "$result$ext";
+                    $thumbSave = SalvaThumb($folder,$filename, $ext);
+                    LogMessage("thumb salvata ($filename$ext): $thumbSave","thumbs.log");
+                }
                 else //il file non è un'immagine valida
                 {
                     if(!unlink("./$result"))
@@ -135,6 +151,36 @@
         }
         return $result;
     }
+    function SalvaThumb($folder,$filename, $ext)
+    {
+        switch($ext)
+        {
+            case ".jpg";
+                $image = imagecreatefromjpeg("./$folder/$filename$ext");
+                break;
+            case ".png":
+                $image = imagecreatefrompng("./$folder/$filename$ext");
+                break;
+            case ".gif":
+                $image = imagecreatefromgif("./$folder/$filename$ext");
+                break;
+            default:
+                return false;
+        }
+        $size = getimagesize("./$folder/$filename$ext");
+        $newHeight = (64*$size[1])/$size[0];
+        $imageResized = imagescale($image, 64, $newHeight);
+        switch($ext)
+        {
+            case ".jpg";
+                return imagejpeg($imageResized, "./$folder/thumb.$filename$ext");
+            case ".png":
+                return imagepng($imageResized, "./$folder/thumb.$filename$ext");
+            case ".gif":
+                return imagegif($imageResized, "./$folder/thumb.$filename$ext");
+        }
+        return false;
+    }
     function GetFileExtension($filepath)
     {
         $mime = mime_content_type($filepath);
@@ -146,9 +192,10 @@
                 return ".png";
             case "image/gif":
                 return ".gif";
+            /* Non c'è il supporto per la creazione del thumb
             case "image/bmp":
                 return ".bmp";
-
+            */
             case "application/pdf":
                 return ".pdf";
             /*

@@ -85,6 +85,30 @@ CREATE TABLE IF NOT EXISTS `editor_gestione` (
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- L’esportazione dei dati non era selezionata.
+-- Dump della struttura di tabella postapp.log_request
+CREATE TABLE IF NOT EXISTS `log_request` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `POST` text,
+  `GET` text,
+  `SERVER` text,
+  `SESSION` text,
+  `ip` varchar(15) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+-- L’esportazione dei dati non era selezionata.
+-- Dump della struttura di tabella postapp.log_response
+CREATE TABLE IF NOT EXISTS `log_response` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `response` text,
+  `ip` varchar(15) DEFAULT NULL,
+  `request_id` int(11) unsigned DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `FK_log_response_log_request` (`request_id`),
+  CONSTRAINT `FK_log_response_log_request` FOREIGN KEY (`request_id`) REFERENCES `log_request` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+-- L’esportazione dei dati non era selezionata.
 -- Dump della struttura di tabella postapp.news_editor
 CREATE TABLE IF NOT EXISTS `news_editor` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
@@ -93,7 +117,7 @@ CREATE TABLE IF NOT EXISTS `news_editor` (
   `data` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `titolo` varchar(64) NOT NULL,
   `corpo` text NOT NULL,
-  `immagine` varchar(20) DEFAULT NULL,
+  `immagine` varchar(64) DEFAULT NULL,
   `posizione` varchar(22) DEFAULT NULL,
   `notificabile` bit(1) NOT NULL DEFAULT b'1',
   PRIMARY KEY (`id`),
@@ -133,7 +157,7 @@ CREATE TABLE IF NOT EXISTS `news_scuola` (
   `pubblicataDaUtente` int(11) unsigned DEFAULT NULL,
   `titolo` varchar(64) NOT NULL,
   `corpo` text NOT NULL,
-  `immagine` varchar(20) DEFAULT NULL,
+  `immagine` varchar(64) DEFAULT NULL,
   `data` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `FK_news_scuola_scuola` (`pubblicataDaScuola`),
@@ -150,7 +174,7 @@ CREATE TABLE IF NOT EXISTS `news_scuola_classe` (
   `pubblicataDaUtente` int(11) unsigned DEFAULT NULL,
   `titolo` varchar(64) NOT NULL,
   `corpo` text NOT NULL,
-  `immagine` varchar(20) DEFAULT NULL,
+  `immagine` varchar(64) DEFAULT NULL,
   `data` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `FK_news_scuola_classe_scuola` (`pubblicataDaScuola`),
@@ -255,6 +279,7 @@ CREATE TABLE IF NOT EXISTS `push_devices` (
   `id_utente` int(11) unsigned NOT NULL,
   `token` text NOT NULL,
   `deviceOS` tinyint(3) unsigned NOT NULL COMMENT '1 android; 2 ios; 3 windows 10;',
+  `deviceId` varchar(80) NOT NULL,
   KEY `FK_push_devices_utente` (`id_utente`),
   CONSTRAINT `FK_push_devices_utente` FOREIGN KEY (`id_utente`) REFERENCES `utente` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
