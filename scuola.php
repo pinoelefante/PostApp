@@ -256,7 +256,8 @@
                     if($idNews > 0)
                     {
                         $responseCode = StatusCodes::OK;
-                        InviaNotificaPushScuola($idScuola,$idNews,$titolo,$corpoNews, $destinatari);
+                        //TODO invia notifica push classe
+                        //InviaNotificaPushScuola($idScuola,$idNews,$titolo,$corpoNews, $destinatari);
                     }
                 }
                 else
@@ -417,7 +418,7 @@
             $result = $st->execute() ? StatusCodes::OK : StatusCodes::FAIL;
             $st->close();
         }
-        dbClose();
+        dbClose($dbConn);
         return $result;
     }
     function GetMieScuoleWriter()
@@ -1108,7 +1109,7 @@
             }
             $st->close();
         }
-        dbClose();
+        dbClose($dbConn);
         return $result;
     }
     function GetNomeScuolaById($idScuola)
@@ -1127,7 +1128,7 @@
             }
             $st->close();
         }
-        dbClose();
+        dbClose($dbConn);
         return $result;
     }
     function InviaNotificaPushScuola($idScuola,$idNews,$titolo,$corpo,$destinatari)
