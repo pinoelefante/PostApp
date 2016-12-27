@@ -1,8 +1,8 @@
 -- --------------------------------------------------------
 -- Host:                         127.0.0.1
--- Versione server:              10.1.16-MariaDB - mariadb.org binary distribution
+-- Versione server:              10.1.19-MariaDB - mariadb.org binary distribution
 -- S.O. server:                  Win32
--- HeidiSQL Versione:            9.4.0.5142
+-- HeidiSQL Versione:            9.4.0.5143
 -- --------------------------------------------------------
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
@@ -199,7 +199,7 @@ CREATE TABLE IF NOT EXISTS `news_scuola_classe_confermalettura` (
 CREATE TABLE IF NOT EXISTS `news_scuola_classe_destinatario` (
   `id_news` int(11) unsigned NOT NULL,
   `id_classe` int(11) unsigned NOT NULL,
-  `ruolo` varchar(3) NOT NULL,
+  `ruolo` varchar(10) NOT NULL,
   PRIMARY KEY (`id_news`,`id_classe`,`ruolo`),
   KEY `FK_news_scuola_classe_destinatario_scuola_classe` (`id_classe`),
   CONSTRAINT `FK_news_scuola_classe_destinatario_news_scuola_classe` FOREIGN KEY (`id_news`) REFERENCES `news_scuola_classe` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
