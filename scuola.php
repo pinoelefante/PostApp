@@ -190,6 +190,23 @@
                 }
             }
             break;
+        case "ListaClassi":
+            if(isLogged(true))
+            {
+                $idScuola = getParameter("idScuola", true);
+                if(UtentePuoPostarePerScuola($idScuola))
+                {
+                    $responseCode = $listaClassi = ElencoClassiScuola($idScuola);
+                    if(is_array($listaClassi))
+                    {
+                        $responseCode = StatusCodes::OK;
+                        $responseContent = $listaClassi;
+                    }
+                }
+                else
+                    $responseCode = StatusCodes::SCUOLA_PERMESSI_INSUFFICIENTI;
+            }
+            break;
         case "SbloccaCodiceFamiglia":
             if(isLogged(true))
             {
@@ -227,7 +244,23 @@
         case "PostaNewsClasse":
             if(isLogged(true))
             {
-                //TODO
+                $idScuola = getParameter("idScuola", true);
+                if(UtentePuoPostarePerScuola($idScuola))
+                {
+                    $titolo = getParameter("titolo", true);
+                    $corpoNews = getParameter("corpo", true);
+                    $immagine = getParameter("image");
+                    $destinatari = getParameter("destinatari", true);
+                    $classi = getParameter("classi", true);
+                    $idNews = $responseCode = PostaNewsClasse($idScuola,$titolo,$corpoNews,$immagine,$destinatari, $classi);
+                    if($idNews > 0)
+                    {
+                        $responseCode = StatusCodes::OK;
+                        InviaNotificaPushScuola($idScuola,$idNews,$titolo,$corpoNews, $destinatari);
+                    }
+                }
+                else
+                    $responseCode = StatusCodes::SCUOLA_PERMESSI_INSUFFICIENTI;
             }
             break;
         case "GetNewsScuola": //preside
@@ -696,14 +729,34 @@
             if($st->execute())
             {
                 $newsId = $result = $dbConn->insert_id;
-                InserisciDestinatariNewsScuola($newsId,$idScuola, $destinatati);
+                InserisciDestinatariNewsScuola($newsId,$idScuola, $destinatari);
             }
             $st->close();
         }
         dbClose($dbConn);
         return $result;
     }
-    function InserisciDestinatariNewsScuola($idNews,$idScuola, $destinatati)
+    function PostaNewsClasse($idScuola,$titolo,$corpoNews,$immagine,$destinatari, $classi)
+    {
+        $idUtente = getIdUtenteFromSession();
+        $query = "INSERT INTO news_scuola_classe (titolo,corpo,immagine,pubblicataDaScuola,pubblicataDaUtente) VALUES (?,?,?,?,?)";
+        $result = StatusCodes::FAIL;
+        $dbConn = dbConnect();
+        if($st = $dbConn->prepare($query))
+        {
+            $imagePath = SalvaImmagine($immagine);
+            $st->bind_param("sssii",$titolo,$corpoNews,$imagePath,$idScuola,$idUtente);
+            if($st->execute())
+            {
+                $newsId = $result = $dbConn->insert_id;
+                InserisciDestinatariNewsClasse($newsId,$classi, $destinatari);
+            }
+            $st->close();
+        }
+        dbClose($dbConn);
+        return $result;
+    }
+    function InserisciDestinatariNewsScuola($idNews,$idScuola, $destinatari)
     {
         $query = "INSERT INTO news_scuola_destinatario (id_news,id_scuola,ruolo) VALUES (?,?,?)";
         $dbConn = dbConnect();
@@ -713,6 +766,24 @@
             {
                 $st->bind_param("iis", $idNews,$idScuola,$ruolo);
                 $st->execute();
+            }
+            $st->close();
+        }
+        dbClose($dbConn);
+    }
+    function InserisciDestinatariNewsClasse($idNews,$idClassi,$destinatari)
+    {
+        $query = "INSERT INTO news_scuola_classe_destinatario (id_news,id_classe,ruolo) VALUES (?,?,?)";
+        $dbConn = dbConnect();
+        if($st = $dbConn->prepare($query))
+        {
+            foreach($idClassi as $classe)
+            {
+                foreach($destinatari as $ruolo)
+                {
+                    $st->bind_param("iis", $idNews,$classe,$ruolo);
+                    $st->execute();
+                }
             }
             $st->close();
         }
@@ -909,6 +980,29 @@
                 $st->bind_result($idCodice, $usato, $usatoUtente);
                 if($st->fetch())
                     $result = array("id"=>$idCodice, "usato"=>$usato, "usatoUtente"=>$usatoUtente,"ruolo"=>GetRuoloDaSigla($tipo));
+            }
+            $st->close();
+        }
+        dbClose($dbConn);
+        return $result;
+    }
+    function ElencoClassiScuola($idScuola)
+    {
+        $query = "SELECT classi.id_classe, classi.classe, classi.sezione,plesso.nome_plesso,grado.grado FROM scuola_classe AS classi JOIN scuola_grado AS grado JOIN scuola_plesso AS plesso ON classi.id_plesso=plesso.id AND classi.id_grado=grado.id WHERE classi.id_scuola = ?";
+        $result = StatusCodes::FAIL;
+        $dbConn = dbConnect();
+        if($st = $dbConn->prepare($query))
+        {
+            $st->bind_param("i", $idScuola);
+            if($st->execute())
+            {
+                $st->bind_result($idClasse,$classe,$sezione,$plesso,$grado);
+                $result = array();
+                while($st->fetch())
+                {
+                    $classeRow = array(""=>$idClasse,""=>$classe,""=>$sezione,""=>$plesso,""=>$grado);
+                    array_push($result, $classeRow);
+                }
             }
             $st->close();
         }

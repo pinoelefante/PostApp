@@ -3,6 +3,7 @@
     {
         //ENVELOP_UNSET non è mai inviato dal server ma è utilizzato soltanto all'interno dell'applicazione
         const ENVELOP_UNSET = 0;
+        const METHOD_NOT_IMPLEMENTED = -1000;
 
         const FAIL = -1;
         const RICHIESTA_MALFORMATA = -2;

@@ -4,6 +4,7 @@
     require_once("logger.php");
 
     $requestId = LogRequest();
+    checkUserAgent();
 
     function isLogged($required = false)
     {
@@ -259,12 +260,19 @@
         //TODO aggiungere array SERVER
         //http://stackoverflow.com/questions/15699101/get-the-client-ip-address-using-php
         //TODO aggiungere array SESSION
-        $message = "ID Utente: $idUtente<br>IP Address: $remoteAddr<br>";
+        $message = "RequestId: ".$GLOBALS['requestId']."\n<br>ID Utente: $idUtente<br>IP Address: $remoteAddr<br>";
         return $message;
     }
     function GeneraCodice($prefix = "", $appendix = "")
     {
         $code = uniqid($prefix, false).$appendix;
         return $code;
+    }
+    function checkUserAgent()
+    {
+        if($_SERVER['HTTP_USER_AGENT']=="PostAppClient")
+            return true;
+        sendResponse(StatusCodes::RICHIESTA_MALFORMATA);
+        exit();
     }
 ?>
