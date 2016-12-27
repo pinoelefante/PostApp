@@ -1000,7 +1000,7 @@
                 $result = array();
                 while($st->fetch())
                 {
-                    $classeRow = array(""=>$idClasse,""=>$classe,""=>$sezione,""=>$plesso,""=>$grado);
+                    $classeRow = array("idClasse"=>$idClasse,"classe"=>$classe,"sezione"=>$sezione,"plesso"=>$plesso,"grado"=>$grado);
                     array_push($result, $classeRow);
                 }
             }
@@ -1021,10 +1021,14 @@
             if($st->execute())
             {
                 $st->bind_result($ruoloFound);
-                if($st->fetch())
+                while($st->fetch())
                 {
-                    $found = array_filter($ruoli, function($item) {return $item==$ruoloFound;} );
-                    $result = count($found) > 0;
+                    $found = array_filter($ruoli, function($item) use($ruoloFound) {return $item==$ruoloFound;} );
+                    if(count($found) > 0)
+                    {
+                        $result = true;
+                        break;
+                    }
                 }
             }
             $st->close();
