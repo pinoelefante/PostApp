@@ -4,6 +4,7 @@
     require_once("enums.php");
     require_once("functions.php");
     require_once("news_common.php");
+    require_once("database.php");
 
     define('RUOLO_PRESIDE', 'Preside');
     define('RUOLO_SEGRETERIA', 'Segreteria');
@@ -373,53 +374,25 @@
     function RegistraScuola($nomeScuola, $localitaScuola, $emailScuola,$telefonoScuola, $indirizzoScuola, $nomePreside, $cognomePreside, $usernamePreside, $passwordPreside)
     {
         $query = "INSERT INTO scuola (nome,localita,email,telefono,indirizzo) VALUES (?,?,?,?,?)";
-        $result = StatusCodes::FAIL;
-        $dbConn = dbConnect();
-        if($st = $dbConn->prepare($query))
+        $idScuola = dbUpdate($query,"sssss",array($nomeScuola, $localitaScuola,$emailScuola, $telefonoScuola, $indirizzoScuola), DatabaseReturns::RETURN_INSERT_ID);
+        if($idScuola > 0)
         {
-            $st->bind_param("sssss", $nomeScuola, $localitaScuola,$emailScuola, $telefonoScuola, $indirizzoScuola);
-            $result = $st->execute() ? StatusCodes::OK : StatusCodes::SQL_FAIL;
-            if($result == StatusCodes::OK)
-            {
-                $idScuola = $dbConn->insert_id;
-                $idUtente = getIdUtenteFromSession();
-                $result = RegistraPresideScuola($idUtente,$idScuola,$nomePreside, $cognomePreside, $usernamePreside, $passwordPreside); 
-                if($result!=StatusCodes::OK)
-                    DeleteScuola($idScuola);
-            }
-            $st->close();
+            $idUtente = getIdUtenteFromSession();
+            $result = RegistraPresideScuola($idUtente,$idScuola,$nomePreside, $cognomePreside, $usernamePreside, $passwordPreside); 
+            if($result!=StatusCodes::OK)
+                DeleteScuola($idScuola);
         }
-        dbClose($dbConn);
-        return $result;
     }
     function RegistraPresideScuola($idUtente,$idScuola,$nome, $cognome, $username, $password)
     {
         $query = "INSERT INTO scuola_gestione (id_utente,id_scuola,username,password,nome,cognome,ruolo) VALUES (?,?,?,?,?,?,'Preside')";
-        $result = StatusCodes::FAIL;
-        $dbConn = dbConnect();
-        if($st = $dbConn->prepare($query))
-        {
-            $pass_hash = hashPassword($password);
-            $st->bind_param("iissss", $idUtente,$idScuola,$username,$pass_hash,$nome,$cognome);
-            $result = $st->execute() ? StatusCodes::OK : StatusCodes::SCUOLA_IMPOSSIBILE_ASSEGNARE_PRESIDE;
-            $st->close();
-        }
-        dbClose($dbConn);
-        return $result;
+        $pass_hash = hashPassword($password);
+        return dbUpdate($query, "iissss",array($idUtente,$idScuola,$username,$pass_hash,$nome,$cognome)) ? StatusCodes::OK : StatusCodes::SCUOLA_IMPOSSIBILE_ASSEGNARE_PRESIDE;
     }
     function DeleteScuola($idScuola)
     {
         $query = "DELETE FROM scuola WHERE id = ?";
-        $result = StatusCodes::FAIL;
-        $dbConn = dbConnect();
-        if($st = $dbConn->prepare($query))
-        {
-            $st->bind_param("i", $idScuola);
-            $result = $st->execute() ? StatusCodes::OK : StatusCodes::FAIL;
-            $st->close();
-        }
-        dbClose($dbConn);
-        return $result;
+        return dbUpdate($query, "i", array($idScuola)) ? StatusCodes::OK : StatusCodes::FAIL;
     }
     function GetMieScuoleWriter()
     {
@@ -502,66 +475,29 @@
     function AggiungiPlesso($idScuola, $nomePlesso)
     {
         $query = "INSERT INTO scuola_plesso (id_scuola,nome_plesso) VALUES (?,?)";
-        $result = StatusCodes::FAIL;
-        $dbConn = dbConnect();
-        if($st = $dbConn->prepare($query))
-        {
-            $st->bind_param("is", $idScuola,$nomePlesso);
-            $result = $st->execute() ? StatusCodes::OK : StatusCodes::SCUOLA_PLESSO_DUPLICATO;
-            $st->close();
-        }
-        dbClose($dbConn);
-        return $result;
+        return dbUpdate($query, "is", array($idScuola,$nomePlesso)) ? StatusCodes::OK : StatusCodes::SCUOLA_PLESSO_DUPLICATO;
     }
     function RimuoviPlesso($idPlesso)
     {
         $query = "DELETE FROM scuola_plesso WHERE id = ?";
-        $result = StatusCodes::FAIL;
-        $dbConn = dbConnect();
-        if($st = $dbConn->prepare($query))
-        {
-            $st->bind_param("i",$idPlesso);
-            $result = $st->execute() && $dbConn->affected_rows > 0 ? StatusCodes::OK : StatusCodes::SCUOLA_PLESSO_NON_PRESENTE;
-            $st->close();
-        }
-        dbClose($dbConn);
-        return $result;
+        return dbUpdate($query, "i", array($idPlesso), DatabaseReturns::RETURN_AFFECTED_ROWS) > 0 ? StatusCodes::OK : StatusCodes::SCUOLA_PLESSO_NON_PRESENTE;
     }
     function AggiungiGrado($idScuola, $grado)
     {
         $query = "INSERT INTO scuola_grado (id_scuola, grado) VALUES (?,?)";
-        $result = StatusCodes::FAIL;
-        $dbConn = dbConnect();
-        if($st = $dbConn->prepare($query))
-        {
-            $st->bind_param("is", $idScuola,$grado);
-            $result = $st->execute() ? StatusCodes::OK : StatusCodes::SCUOLA_GRADO_DUPLICATO;
-            $st->close();
-        }
-        dbClose($dbConn);
-        return $result;
+        return dbUpdate($query, "is", array($idScuola,$grado)) ? StatusCodes::OK : StatusCodes::SCUOLA_GRADO_DUPLICATO;
     }
     function RimuoviGrado($idGrado)
     {
         $query = "DELETE FROM scuola_grado WHERE id = ?";
-        $result = StatusCodes::FAIL;
-        $dbConn = dbConnect();
-        if($st = $dbConn->prepare($query))
-        {
-            $st->bind_param("i",$idGrado);
-            $result = $st->execute() && $dbConn->affected_rows > 0 ? StatusCodes::OK : StatusCodes::SCUOLA_PLESSO_NON_PRESENTE;
-            $st->close();
-        }
-        dbClose($dbConn);
-        return $result;
+        return dbUpdate($query, "i", array($idGrado), DatabaseReturns::RETURN_AFFECTED_ROWS) > 0 ? StatusCodes::OK : StatusCodes::SCUOLA_GRADO_NON_PRESENTE;
     }
     function AggiungiSezione($idScuola, $idPlesso, $idGrado, $letteraSezione, $classeInizio, $classeFine)
     {
-        $dbConn = dbConnect();
         $result = StatusCodes::FAIL;
         for($classe = $classeInizio;$classe<=$classeFine;$classe++)
         {
-            $result = AggiungiClasse($idScuola,$idPlesso,$idGrado,$letteraSezione,$classe,$dbConn);
+            $result = AggiungiClasse($idScuola,$idPlesso,$idGrado,$letteraSezione,$classe);
             if($result!=StatusCodes::OK)
             {
                 $result = StatusCodes::SCUOLA_ERRORE_INSERIMENTO_SEZIONE;
@@ -569,73 +505,29 @@
                 break;
             }
         }
-        dbClose($dbConn);
         return $result;
     }
-    function AggiungiClasse($idScuola, $idPlesso, $idGrado,$letteraSezione,$classe, $dbConn = NULL)
+    function AggiungiClasse($idScuola, $idPlesso, $idGrado,$letteraSezione,$classe)
     {
         $query = "INSERT INTO scuola_classe (id_scuola,id_plesso,id_grado,classe,sezione) VALUES (?,?,?,?,?)";
-        $toClose = false;
-        if($dbConn==NULL)
-        {
-            $dbConn = dbConnect();
-            $toClose = true;
-        }
-        $result = StatusCodes::FAIL;
-        if($st = $dbConn->prepare($query))
-        {
-            $st->bind_param("iiiis", $idScuola,$idPlesso,$idGrado,$classe,$letteraSezione);
-            $result = $st->execute() ? StatusCodes::OK : StatusCodes::FAIL;
-            $st->close();
-        }
-        if($toClose)
-            dbClose($dbConn);
-        return $result;
+        return dbUpdate($query, "iiiis", array($idScuola,$idPlesso,$idGrado,$classe,$letteraSezione)) ? StatusCodes::OK : StatusCodes::FAIL;
     }
     function DeleteClassi($idScuola, $idPlesso, $idGrado,$letteraSezione, $classeInizio, $classeFine)
     {
-        $dbConn = dbConnect();
         $result = StatusCodes::FAIL;
         for($classe = $classeInizio;$classe<=$classeFine;$classe++)
-        {
             $result = RimuoviClasse($idScuola, $idPlesso, $idGrado,$letteraSezione,$classe,$dbConn);
-        }
-        dbClose($dbConn);
         return $result;
     }
     function RimuoviClasse($idScuola, $idPlesso, $idGrado,$letteraSezione, $classe, $dbConn)
     {
         $query = "DELETE FROM scuola_classe WHERE id_scuola = ? AND id_plesso = ? AND id_grado = ? AND classe = ? AND sezione = ?";
-        $toClose = false;
-        if($dbConn==NULL)
-        {
-            $dbConn = dbConnect();
-            $toClose = true;
-        }
-        $result = StatusCodes::FAIL;
-        if($st = $dbConn->prepare($query))
-        {
-            $st->bind_param("iiiis", $idScuola,$idPlesso,$idGrado,$classe,$letteraSezione);
-            $result = $st->execute() ? StatusCodes::OK : StatusCodes::FAIL;
-            $st->close();
-        }
-        if($toClose)
-            dbClose($dbConn);
-        return $result;
+        return dbUpdate($query, "iiiis", array($idScuola,$idPlesso,$idGrado,$classe,$letteraSezione)) ? StatusCodes::OK : StatusCodes::FAIL;
     }
     function RimuoviSezione($idScuola, $idPlesso, $idGrado, $letteraSezione)
     {
         $query = "DELETE FROM scuola_classe WHERE id_scuola = ? AND id_plesso = ? AND id_grado = ? AND sezione = ?";
-        $dbConn = dbConnect();
-        $result = StatusCodes::FAIL;
-        if($st = $dbConn->prepare($query))
-        {
-            $st->bind_param("iiis", $idScuola,$idPlesso,$idGrado,$letteraSezione);
-            $result = $st->execute() ? StatusCodes::OK : StatusCodes::FAIL;
-            $st->close();
-        }
-        dbClose($dbConn);
-        return $result;
+        return dbUpdate($query, "iiis", array($idScuola,$idPlesso,$idGrado,$letteraSezione)) ? StatusCodes::OK : StatusCodes::FAIL;
     }
     function LeggiNewsScuola($idNews)
     {
@@ -720,135 +612,61 @@
     function PostaNewsScuola($idScuola,$titolo,$corpoNews,$immagine,$destinatari)
     {
         $idUtente = getIdUtenteFromSession();
+        $imagePath = SalvaImmagine($immagine);
         $query = "INSERT INTO news_scuola (titolo,corpo,immagine,pubblicataDaScuola,pubblicataDaUtente) VALUES (?,?,?,?,?)";
-        $result = StatusCodes::FAIL;
-        $dbConn = dbConnect();
-        if($st = $dbConn->prepare($query))
-        {
-            $imagePath = SalvaImmagine($immagine);
-            $st->bind_param("sssii",$titolo,$corpoNews,$imagePath,$idScuola,$idUtente);
-            if($st->execute())
-            {
-                $newsId = $result = $dbConn->insert_id;
-                InserisciDestinatariNewsScuola($newsId,$idScuola, $destinatari);
-            }
-            $st->close();
-        }
-        dbClose($dbConn);
-        return $result;
+        $idNews = dbUpdate($query,"sssii",array($titolo,$corpoNews,$imagePath,$idScuola,$idUtente), DatabaseReturns::RETURN_INSERT_ID);
+        if($idNews > 0)
+            InserisciDestinatariNewsScuola($newsId,$idScuola, $destinatari);
+        return $idNews > 0 ? $idNews : StatusCodes::FAIL;
     }
     function PostaNewsClasse($idScuola,$titolo,$corpoNews,$immagine,$destinatari, $classi)
     {
         $idUtente = getIdUtenteFromSession();
+        $imagePath = SalvaImmagine($immagine);
         $query = "INSERT INTO news_scuola_classe (titolo,corpo,immagine,pubblicataDaScuola,pubblicataDaUtente) VALUES (?,?,?,?,?)";
-        $result = StatusCodes::FAIL;
-        $dbConn = dbConnect();
-        if($st = $dbConn->prepare($query))
-        {
-            $imagePath = SalvaImmagine($immagine);
-            $st->bind_param("sssii",$titolo,$corpoNews,$imagePath,$idScuola,$idUtente);
-            if($st->execute())
-            {
-                $newsId = $result = $dbConn->insert_id;
-                InserisciDestinatariNewsClasse($newsId,$classi, $destinatari);
-            }
-            $st->close();
-        }
-        dbClose($dbConn);
-        return $result;
+        $idNews = dbUpdate($query, "sssii", array($titolo,$corpoNews,$imagePath,$idScuola,$idUtente), DatabaseReturns::RETURN_INSERT_ID);
+        if($idNews > 0)
+            InserisciDestinatariNewsClasse($newsId,$classi, $destinatari);
+        return $idNews > 0 ? $idNews : StatusCodes::FAIL;
     }
     function InserisciDestinatariNewsScuola($idNews,$idScuola, $destinatari)
     {
         $query = "INSERT INTO news_scuola_destinatario (id_news,id_scuola,ruolo) VALUES (?,?,?)";
-        $dbConn = dbConnect();
-        if($st = $dbConn->prepare($query))
-        {
-            foreach($destinatari as $ruolo)
-            {
-                $st->bind_param("iis", $idNews,$idScuola,$ruolo);
-                $st->execute();
-            }
-            $st->close();
-        }
-        dbClose($dbConn);
+        foreach($destinatari as $ruolo)
+            dbUpdate($query, "iis", array($idNews,$idScuola,$ruolo));
     }
     function InserisciDestinatariNewsClasse($idNews,$idClassi,$destinatari)
     {
         $query = "INSERT INTO news_scuola_classe_destinatario (id_news,id_classe,ruolo) VALUES (?,?,?)";
-        $dbConn = dbConnect();
-        if($st = $dbConn->prepare($query))
+        foreach($idClassi as $classe)
         {
-            foreach($idClassi as $classe)
-            {
-                foreach($destinatari as $ruolo)
-                {
-                    $st->bind_param("iis", $idNews,$classe,$ruolo);
-                    $st->execute();
-                }
-            }
-            $st->close();
+            foreach($destinatari as $ruolo)
+                dbUpdate($query, "iis", array($idNews,$classe,$ruolo));
         }
-        dbClose($dbConn);
     }
     function FollowScuola($idScuola,$ruolo = "genitore")
     {
         $idUtente = getIdUtenteFromSession();
         $query = "INSERT INTO scuola_follow (id_utente,id_scuola,ruolo) VALUES (?,?,?)";
-        $result = StatusCodes::FAIL;
-        $dbConn = dbConnect();
-        if($st = $dbConn->prepare($query))
-        {
-            $st->bind_param("iis",$idUtente,$idScuola,$ruolo);
-            $result = $st->execute() ? StatusCodes::OK : StatusCodes::SEGUI_GIA;
-            $st->close();
-        }
-        dbClose($dbConn);
-        return $result;
+        return dbUpdate($query, "iis", array($idUtente,$idScuola,$ruolo)) ? StatusCodes::OK : StatusCodes::SEGUI_GIA;
     }
     function FollowClasse($idClasse, $ruolo = "genitore")
     {
         $idUtente = getIdUtenteFromSession();
         $query = "INSERT INTO scuola_classe_follow (id_utente,id_classe,ruolo) VALUES (?,?,?)";
-        $result = StatusCodes::FAIL;
-        $dbConn = dbConnect();
-        if($st = $dbConn->prepare($query))
-        {
-            $st->bind_param("iis",$idUtente,$idClasse,$ruolo);
-            $result = $st->execute() ? StatusCodes::OK : StatusCodes::SEGUI_GIA;
-            $st->close();
-        }
-        dbClose($dbConn);
-        return $result;
+        return dbUpdate($query,"iis", array($idUtente,$idClasse,$ruolo)) ? StatusCodes::OK : StatusCodes::SEGUI_GIA;
     }
     function UnfollowScuola($idScuola, $ruolo = "genitore")
     {
         $idUtente = getIdUtenteFromSession();
         $query = "DELETE FROM scuola_follow WHERE id_utente = ? AND id_scuola = ? AND ruolo = ?";
-        $result = StatusCodes::FAIL;
-        $dbConn = dbConnect();
-        if($st = $dbConn->prepare($query))
-        {
-            $st->bind_param("iis",$idUtente,$idScuola,$ruolo);
-            $result = $st->execute() && $dbConn->affected_rows > 0 ? StatusCodes::OK : StatusCodes::FAIL;
-            $st->close();
-        }
-        dbClose($dbConn);
-        return $result;
+        return dbUpdate($query, "iis", array($idUtente,$idScuola,$ruolo), DatabaseReturns::RETURN_AFFECTED_ROWS) > 0 ? StatusCodes::OK : StatusCodes::FAIL;
     }
     function UnfollowClasse($idClasse, $ruolo = "genitore")
     {
         $idUtente = getIdUtenteFromSession();
         $query = "DELETE FROM scuola_classe_follow WHERE id_utente = ? AND id_scuola = ? AND ruolo = ?";
-        $result = StatusCodes::FAIL;
-        $dbConn = dbConnect();
-        if($st = $dbConn->prepare($query))
-        {
-            $st->bind_param("iis",$idUtente,$idClasse,$ruolo);
-            $result = $st->execute() && $dbConn->affected_rows > 0 ? StatusCodes::OK : StatusCodes::FAIL;
-            $st->close();
-        }
-        dbClose($dbConn);
-        return $result;
+        return dbUpdate($query, "iis", array($idUtente,$idClasse,$ruolo), DatabaseReturns::RETURN_AFFECTED_ROWS) > 0 ? StatusCodes::OK : StatusCodes::FAIL;
     }
     function SbloccaCodice($codice, $nome,$cognome,$nascita)
     {
@@ -894,16 +712,7 @@
     {
         $idUtente = getIdUtenteFromSession();
         $query = "INSERT INTO scuola_codice_famiglia_uso (id_codice,id_utente,ruolo) VALUES (?,?,?)";
-        $result = StatusCodes::FAIL;
-        $dbConn = dbConnect();
-        if($st = $dbConn->prepare($query))
-        {
-            $st->bind_param("iis", $idCodice,$idUtente,$ruolo);
-            $result = $st->execute() ? StatusCodes::OK : StatusCodes::CODICE_GIA_IN_USO;
-            $st->close();
-        }
-        dbClose($dbConn);
-        return $result;
+        return dbUpdate($query,"iis", array($idCodice,$idUtente,$ruolo)) ? StatusCodes::OK : StatusCodes::CODICE_GIA_IN_USO;
     }
     function GetRuoloDaSigla($sigla)
     {
@@ -925,16 +734,7 @@
     function AggiornaCampoCodice($idCodice,$nome,$cognome,$data)
     {
         $query = "UPDATE scuola_codice_famiglia SET alunno_nome = ?, alunno_cognome = ?, alunno_nascita = ? WHERE id_codice = ?";
-        $result = false;
-        $dbConn = dbConnect();
-        if($st = $dbConn->prepare($query))
-        {
-            $st->bind_param("sssi",$nome,$cognome,$data,$idCodice);
-            $result = $st->execute();
-            $st->close();
-        }
-        dbClose($dbConn);
-        return $result;
+        return dbUpdate($query, "sssi", array($nome,$cognome,$data,$idCodice));
     }
     function VerificaCodice($codice) //controllo formale del codice
     {

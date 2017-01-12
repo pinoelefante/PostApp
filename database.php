@@ -22,7 +22,7 @@
             LogMessage("(".$mysqli->errno.") ".$mysqli->error, "mysql.log");
         $mysqli->close();
     }
-    function dbUpdate($query,$parametersType,$parameters)
+    function dbUpdate($query,$parametersType,$parameters, $returnType = DatabaseReturns::RETURN_BOOLEAN)
     {
         $res = false;
         $dbConn = dbConnect();
@@ -30,6 +30,32 @@
         {
             call_user_func_array(array($st, 'bind_param'), array_merge(array($parametersType), makeValuesReferenced($parameters)));
             $res = $st->execute();
+            switch($returnType)
+            {
+                case DatabaseReturns::RETURN_BOOLEAN:
+                    //è il valore salvato di default in $res
+                    break;
+                case DatabaseReturns::RETURN_AFFECTED_ROWS:
+                    $res = $dbConn->affected_rows;
+                    break;
+                case DatabaseReturns::RETURN_INSERT_ID:
+                    $res = $dbConn->insert_id;
+                    break;
+            }
+            $st->close();
+        }
+        dbClose($dbConn);
+        return $res;
+    }
+    function dbSelect($query,$parametersType,$parameters)
+    {
+        $res = false;
+        $dbConn = dbConnect();
+        if($st = $dbConn->prepare($query))
+        {
+            call_user_func_array(array($st, 'bind_param'), array_merge(array($parametersType), makeValuesReferenced($parameters)));
+            $res = $st->execute();
+            //TODO fetch
             $st->close();
         }
         dbClose($dbConn);

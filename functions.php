@@ -16,13 +16,17 @@
         }
         return $sessionVer;
     }
-    function getIdUtenteFromSession()
+    function getIdUtenteFromSession($failIfNotLogged = true)
     {
         if(isset($_SESSION["idUtente"]))
             return $_SESSION["idUtente"];
             
-        sendResponse(StatusCodes::LOGIN_NON_LOGGATO, "");
-        die();
+        if($failIfNotLogged)
+        {
+            sendResponse(StatusCodes::LOGIN_NON_LOGGATO, "");
+            die();
+        }
+        return -1; //utente non loggato
     }
     function getParameter($par,$required = false)
     {
@@ -240,9 +244,13 @@
     }
     function checkUserAgent()
     {
-        if($_SERVER['HTTP_USER_AGENT']=="PostAppClient")
-            return true;
-        sendResponse(StatusCodes::RICHIESTA_MALFORMATA);
-        exit();
+        if(CHECK_USER_AGENT)
+        {
+            if($_SERVER['HTTP_USER_AGENT']=="PostAppClient")
+                return true;
+            sendResponse(StatusCodes::INVALID_CLIENT);
+            exit();
+        }
+        return true;
     }
 ?>

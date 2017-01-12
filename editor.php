@@ -3,6 +3,7 @@
     
     require_once("enums.php");
     require_once("functions.php");
+    require_once("database.php");
     require_once("news_common.php");
     require_once("push_notifications.php");
     require_once("logger.php");
@@ -279,62 +280,37 @@
     function RegistraEditor($nome, $categoria, $email, $telefono, $indirizzo, $localita)
     {
         $query = "INSERT INTO editor (nome,categoria,email,telefono,indirizzo,localita) VALUES (?,?,?,?,?,?)";
-        $dbConn = dbConnect();
-        $result = StatusCodes::FAIL;
-        if($st = $dbConn->prepare($query))
+        $idEditor = dbUpdate($query,"ssssss",array($nome, $categoria, $email, $telefono, $indirizzo, $localita), DatabaseReturns::RETURN_INSERT_ID);
+        
+        $result = $idEditor > 0 ? StatusCodes::OK : StatusCodes::EDITOR_ERRORE_CREAZIONE;
+        if($result == StatusCodes::OK)
         {
-            $st->bind_param("ssssss", $nome, $categoria, $email, $telefono, $indirizzo, $localita);
-            $result = $st->execute() ? StatusCodes::OK : StatusCodes::EDITOR_ERRORE_CREAZIONE;
-            if($result == StatusCodes::OK)
+            $idUtente = getIdUtenteFromSession();
+            if(PartecipaEditor($idEditor, $idUtente, "admin")!=StatusCodes::OK)
             {
-                $idEditor = $dbConn->insert_id;
-                $idUtente = getIdUtenteFromSession();
-                if(PartecipaEditor($idEditor, $idUtente, "admin")!=StatusCodes::OK)
-                {
-                    DeleteEditor($idEditor);
-                    $result = StatusCodes::EDITOR_IMPOSSIBILE_ASSEGNARE_AMMINISTRATORE;
-                }
-                else 
-                {
-                    if($categoria == 'Comune')
-                        AutoFollowComune($idEditor, $localita);
-                    AutoFollowSuperReader($idEditor);
-                    FollowEditor($idEditor);
-                }
+                DeleteEditor($idEditor);
+                $result = StatusCodes::EDITOR_IMPOSSIBILE_ASSEGNARE_AMMINISTRATORE;
             }
-			$st->close();
+            else 
+            {
+                if($categoria == 'Comune')
+                    AutoFollowComune($idEditor, $localita);
+                AutoFollowSuperReader($idEditor);
+                FollowEditor($idEditor);
+            }
         }
-        dbClose($dbConn);
 		return $result;
     }
     //autorizza l'utente a postare a nome dell'editor
     function PartecipaEditor($idEditor, $idUtente, $ruolo = "editor")
     {
         $query = "INSERT INTO editor_gestione (id_utente,id_editor,ruolo) VALUES (?,?,?)";
-        $dbConn = dbConnect();
-        $result = StatusCodes::FAIL;
-        if($st = $dbConn->prepare($query))
-        {
-            $st->bind_param("iis", $idUtente,$idEditor,$ruolo);
-            $result = $st->execute() ? StatusCodes::OK : StatusCodes::FAIL;
-            $st->close();
-        }
-        dbClose($dbConn);
-        return $result;
+        return dbUpdate($query,"iis",array($idUtente,$idEditor,$ruolo)) ? StatusCodes::OK : StatusCodes::FAIL;
     }
     function DeleteEditor($idEditor)
     {
         $query = "DELETE FROM editor WHERE id = ?";
-        $dbConn = dbConnect();
-        $result = StatusCodes::FAIL;
-        if($st = $dbConn->prepare($query))
-        {
-            $st->bind_param("i", $idEditor);
-            $result = $st->execute() && $dbConn->affected_rows>0 ? StatusCodes::OK : StatusCodes::FAIL;
-            $st->close();
-        }
-        dbClose($dbConn);
-        return $result;
+        return dbUpdate($query,"i",array($idEditor), DatabaseReturns::RETURN_AFFECTED_ROWS) ? StatusCodes::OK : StatusCodes::FAIL;
     }
     //elenco editor per cui l'utente è autorizzato a postare
     function ListEditor()
@@ -422,49 +398,21 @@
     {
         $query = "INSERT INTO news_editor (pubblicataDaEditor, pubblicataDaUtente, titolo, corpo, immagine, posizione, notificabile) VALUES (?,?,?,?,?,?,1)";
         $image_path = SalvaImmagine($immagine);
-        $dbConn = dbConnect();
-        $result = StatusCodes::FAIL;
-        if($st = $dbConn->prepare($query))
-        {
-            $st->bind_param("iissss", $idEditor,$idUtente, $titolo, $corpo, $image_path, $posizione);
-            $result = $st->execute() ? StatusCodes::OK : StatusCodes::SQL_FAIL;
-            if($result == StatusCodes::OK)
-                $result = $dbConn->insert_id;
-            $st->close();
-        }
-        dbClose($dbConn);
+        $idNews = dbUpdate($query,"iissss",array($idEditor,$idUtente, $titolo, $corpo, $image_path, $posizione), $returnType = DatabaseReturns::RETURN_INSERT_ID);
+        $result = $idNews > 0 ? $idNews: StatusCodes::FAIL;
         return $result;
     }
     function FollowEditor($idEditor)
     {
         $idUtente = getIdUtenteFromSession();
         $query = "INSERT INTO editor_follow (id_utente,id_editor) VALUES (?,?)";
-        $result = StatusCodes::FAIL;
-        $dbConn = dbConnect();
-        if($st = $dbConn->prepare($query))
-        {
-            $st->bind_param("ii", $idUtente,$idEditor);
-            $result = $st->execute() ? StatusCodes::OK : StatusCodes::SEGUI_GIA;
-            $st->close();
-        }
-        dbClose($dbConn);
-        return $result;
+        return dbUpdate($query,"ii",array($idUtente,$idEditor)) ? StatusCodes::OK : StatusCodes::SEGUI_GIA;
     }
     function UnfollowEditor($idEditor)
     {
         $idUtente = getIdUtenteFromSession();
         $query = "DELETE FROM editor_follow WHERE id_utente = ? AND id_editor = ? AND cancellabile = 1";
-        $result = StatusCodes::FAIL;
-        $dbConn = dbConnect();
-        if($st = $dbConn->prepare($query))
-        {
-            $st->bind_param("ii", $idUtente,$idEditor);
-            $st->execute();
-            $result = $dbConn->affected_rows > 0 ? StatusCodes::OK : StatusCodes::EDITOR_NON_SEGUITO;
-            $st->close();
-        }
-        dbClose($dbConn);
-        return $result;
+        return dbUpdate($query, "ii",array($idUtente,$idEditor), DatabaseReturns::RETURN_AFFECTED_ROWS) > 0 ? StatusCodes::OK : StatusCodes::EDITOR_NON_SEGUITO;
     }
     function GetNotifications($from)
     {
@@ -564,16 +512,7 @@
     function AutoFollowComune($idEditor, $loc)
     {
         $query = "INSERT INTO editor_follow (id_utente, id_editor,cancellabile) SELECT id, $idEditor AS id_editor, 0 AS cancellabile FROM utente WHERE comune_residenza = ?";
-        $result = StatusCodes::FAIL;
-        $dbConn = dbConnect();
-        if($st= $dbConn->prepare($query))
-        {
-            $st->bind_param("s", $loc);
-            $result = $st->execute() ? StatusCodes::OK : StatusCodes::FAIL;
-            $st->close();
-        }
-        dbClose($dbConn);
-        return $result;
+        return dbUpdate($query, "s", array($loc)) ? StatusCodes::OK : StatusCodes::FAIL;
     }
     function AutoFollowSuperReader($idEditor)
     {
@@ -581,16 +520,7 @@
         {
             $idSuperReader = SUPER_READER_ID;
             $query = "INSERT INTO editor_follow (id_utente, id_editor) VALUES (?,?)";
-            $result = StatusCodes::FAIL;
-            $dbConn = dbConnect();
-            if($st= $dbConn->prepare($query))
-            {
-                $st->bind_param("ii", $idSuperReader,$idEditor);
-                $result = $st->execute() ? StatusCodes::OK : StatusCodes::FAIL;
-                $st->close();
-            }
-            dbClose($dbConn);
-            return $result;
+            return dbUpdate($query, "ii", array($idSuperReader,$idEditor)) ? StatusCodes::OK : StatusCodes::FAIL;
         }
     }
     function GetEditorsByLocation($location)
@@ -676,43 +606,20 @@
         if(VerificaAutorizzatoAModificareEditor($idEditor))
         {
             $query = "UPDATE editor SET descrizione = ? WHERE id = ?";
-            $result = StatusCodes::FAIL;
-            $dbConn = dbConnect();
-            if($st = $dbConn->prepare($query))
-            {
-                $st->bind_param("si", $descrizione, $idEditor);
-                $result = $st->execute() ? StatusCodes::OK : StatusCodes::FAIL;
-                $st->close();
-            }
-            dbClose($dbConn);
-            return $result;
+            return dbUpdate($query, "si", array($descrizione, $idEditor)) ? StatusCodes::OK : StatusCodes::FAIL;
         }
-        else
-        {
-            return StatusCodes::EDITOR_UTENTE_NON_AUTORIZZATO;
-        }
+        return StatusCodes::EDITOR_UTENTE_NON_AUTORIZZATO;
     }
     function AddImmagineEditor($idEditor, $immagine)
     {
-        $image_path = SalvaImmagine($immagine, "editors");
         if(VerificaAutorizzatoAModificareEditor($idEditor))
         {
+            $image_path = SalvaImmagine($immagine, "editors");
+
             $query = "UPDATE editor SET immagine = ? WHERE id = ?";
-            $result = StatusCodes::FAIL;
-            $dbConn = dbConnect();
-            if($st = $dbConn->prepare($query))
-            {
-                $st->bind_param("si", $image_path, $idEditor);
-                $result = $st->execute() ? StatusCodes::OK : StatusCodes::FAIL;
-                $st->close();
-            }
-            dbClose($dbConn);
-            return $result;
+            return dbUpdate($query, "si", array($image_path, $idEditor)) ? StatusCodes::OK : StatusCodes::FAIL;
         }
-        else
-        {
-            return StatusCodes::EDITOR_UTENTE_NON_AUTORIZZATO;
-        }
+        return StatusCodes::EDITOR_UTENTE_NON_AUTORIZZATO;
     }
     function GetAllMyNewsFrom($lastId = NULL)
     {

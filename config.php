@@ -10,6 +10,8 @@
     define('DEBUG_SAVE_RESPONSE',0);
     define('DEBUG_LOG_MESSAGE',1);
 
+    define('CHECK_USER_AGENT', 0);
+
     define('ADMIN_EMAIL', 'pinoelefante@hotmail.it');
     define('SUPER_READER_ENABLED', 0);
 	define('SUPER_READER_ID', 1);

@@ -3,6 +3,7 @@
     
     require_once("enums.php");
     require_once("functions.php");
+	require_once("database.php");
     
     $action = getParameter("action", true);
     $responseCode = StatusCodes::FAIL;
@@ -81,16 +82,7 @@
 	function RegisterUser($code, $localita, $mail = NULL)
 	{
 		$query = "INSERT INTO utente (codice_utente, comune_residenza, email) VALUES (?,?,?)";
-		$dbConn = dbConnect();
-		$result = StatusCodes::FAIL;
-		if($st = $dbConn->prepare($query))
-		{
-			$st->bind_param("sss", $code,$localita,$mail);
-			$result = $st->execute() ? StatusCodes::OK : StatusCodes::REG_CODICE_IN_USO;
-			$st->close();
-		}
-		dbClose($dbConn);
-		return $result;
+		return dbUpdate($query,"sss",array($code,$localita,$mail)) ? StatusCodes::OK : StatusCodes::REG_CODICE_IN_USO;
 	}
 	function Access($accessCode)
 	{
@@ -135,46 +127,18 @@
 	{
 		$idUtente = getIdUtenteFromSession();
 		$query = "INSERT INTO editor_follow (id_utente, id_editor,cancellabile) SELECT $idUtente AS id_utente, id, 0 AS cancellabile FROM editor WHERE localita = ? AND categoria = 'Comune' AND approvato=1";
-		$dbConn = dbConnect();
-		$result = StatusCodes::FAIL;
-		if($st = $dbConn->prepare($query))
-		{
-			$st->bind_param("s",$loc);
-            $result = $st->execute() ? StatusCodes::OK : StatusCodes::FAIL;
-
-            $st->close();
-		}
-		dbClose($dbConn);
-		return $result;
+		return dbUpdate($query,"s",array($loc)) ? StatusCodes::OK : StatusCodes::FAIL;
 	}
 	function RegistraDevice($token, $device, $deviceId)
 	{
 		$idUtente = getIdUtenteFromSession();
 		$query = "INSERT INTO push_devices (id_utente,token,deviceOS,deviceId) VALUES (?,?,?,?)";
-		$dbConn = dbConnect();
-		$result = StatusCodes::FAIL;
-		if($st = $dbConn->prepare($query))
-		{
-			$st->bind_param("isis",$idUtente,$token,$device,$deviceId);
-			$result = $st->execute() ? StatusCodes::OK : StatusCodes::FAIL;
-            $st->close();
-		}
-		dbClose($dbConn);
-		return $result;
+		return dbUpdate($query,"isis",array($idUtente,$token,$device,$deviceId)) ? StatusCodes::OK : StatusCodes::FAIL;
 	}
 	function UnRegistraDevice($token, $device,$deviceId)
 	{
 		$idUtente = getIdUtenteFromSession();
 		$query = "DELETE FROM push_devices WHERE id_utente=? AND token=? AND deviceOS=? AND deviceId = ?";
-		$dbConn = dbConnect();
-		$result = StatusCodes::FAIL;
-		if($st = $dbConn->prepare($query))
-		{
-			$st->bind_param("isis",$idUtente,$token,$device,$deviceId);
-			$result = $st->execute() && $dbConn->affected_rows>0 ? StatusCodes::OK : StatusCodes::FAIL;
-            $st->close();
-		}
-		dbClose($dbConn);
-		return $result;
+		return dbUpdate($query,"isis",array($idUtente,$token,$device,$deviceId), DatabaseReturns::RETURN_AFFECTED_ROWS) ? StatusCodes::OK : StatusCodes::FAIL;
 	}
 ?>

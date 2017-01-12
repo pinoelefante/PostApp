@@ -2,6 +2,7 @@
     //SELECT * FROM log_request as req join log_response as resp ON req.id=resp.request_id 
     require_once("config.php");
     require_once("functions.php");
+    require_once("database.php");
     function LogRequest()
     {
         if(DEBUG_ENABLE && DEBUG_SAVE_REQUEST)
@@ -11,17 +12,7 @@
             $post = GetArrayToString($_POST);
             $session = GetArrayToString($_SESSION);
             $query = "INSERT INTO log_request (_SERVER,_POST,_GET,_SESSION) VALUES (?,?,?,?)";
-            $dbConn = dbConnect();
-            $idRequest = -1;
-            if($st = $dbConn->prepare($query))
-            {
-                $st->bind_param("ssss", $server,$post,$get,$session);
-                $st->execute();
-                $idRequest = $dbConn->insert_id;
-                $st->close();
-            }
-            dbClose($dbConn);
-            return $idRequest;
+            return dbUpdate($query,"ssss",array($server,$post,$get,$session), DatabaseReturns::RETURN_INSERT_ID);
         }
     }
     function LogResponse($responseJson, $requestId)
@@ -29,14 +20,7 @@
         if(DEBUG_ENABLE && DEBUG_SAVE_RESPONSE)
         {
             $query = "INSERT INTO log_response (request_id,response) VALUES (?,?)";
-            $dbConn = dbConnect();
-            if($st = $dbConn->prepare($query))
-            {
-                $st->bind_param("is", $requestId, $responseJson);
-                $st->execute();
-                $st->close();
-            }
-            dbClose($dbConn);
+            dbUpdate($query,"is",array($requestId, $responseJson));
         }
     }
     function LogMessage($messaggio, $file = "log_error.log")
@@ -51,13 +35,16 @@
     function GetArrayToString($array)
     {
         $content = "";
-        foreach($array as $key=>$value)
-            $content = $content."$key = $value\n";
+        if(!empty($myarray))
+        {
+            foreach($array as $key=>$value)
+                $content = $content."$key = $value\n";
+        }
         return $content;
     }
     function GetDebugMessage()
     {
-        $idUtente = getIdUtenteFromSession();
+        $idUtente = getIdUtenteFromSession(false);
         $remoteAddr = $_SERVER['REMOTE_ADDR'];
         $server = GetArrayToString($_SERVER);
         $get = GetArrayToString($_GET);

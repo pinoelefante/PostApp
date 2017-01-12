@@ -9,6 +9,7 @@
         const RICHIESTA_MALFORMATA = -2;
         const METODO_ASSENTE = -3;
         const SQL_FAIL = -4;
+		const INVALID_CLIENT = -5;
         
         const OK = 1;
 
@@ -36,6 +37,7 @@
         const SCUOLA_PLESSO_NON_PRESENTE = 65;
         const SCUOLA_GRADO_DUPLICATO = 66;
         const SCUOLA_ERRORE_INSERIMENTO_SEZIONE = 67;
+        const SCUOLA_GRADO_NON_PRESENTE = 68;
 
         const CODICE_INVALIDO = 90;
         const CODICE_USATO = 91;
@@ -44,6 +46,12 @@
         const CODICE_CAMPI_INVALIDI = 94;
 
         const NEWS_COMMON_TIPO_NEWS_INVALIDO = 80;
+    }
+    abstract class DatabaseReturns extends BasicEnum
+    {
+        const RETURN_BOOLEAN = 1;
+        const RETURN_AFFECTED_ROWS = 2;
+        const RETURN_INSERT_ID = 3;
     }
     abstract class CategorieEnum extends BasicEnum
     {
