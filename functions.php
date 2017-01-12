@@ -251,18 +251,6 @@
     {
         return "https://chart.googleapis.com/chart?cht=qr&chl=$code&chs=$dim&choe=UTF-8&chld=L|2";
     }
-    function GetDebugMessage()
-    {
-        $idUtente = getIdUtenteFromSession();
-        $remoteAddr = $_SERVER['REMOTE_ADDR'];
-        //TODO aggiungere array GET
-        //TODO aggiungere array POST
-        //TODO aggiungere array SERVER
-        //http://stackoverflow.com/questions/15699101/get-the-client-ip-address-using-php
-        //TODO aggiungere array SESSION
-        $message = "RequestId: ".$GLOBALS['requestId']."\n<br>ID Utente: $idUtente<br>IP Address: $remoteAddr<br>";
-        return $message;
-    }
     function GeneraCodice($prefix = "", $appendix = "")
     {
         $code = uniqid($prefix, false).$appendix;

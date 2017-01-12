@@ -2,7 +2,7 @@
 -- Host:                         127.0.0.1
 -- Versione server:              10.1.19-MariaDB - mariadb.org binary distribution
 -- S.O. server:                  Win32
--- HeidiSQL Versione:            9.4.0.5143
+-- HeidiSQL Versione:            9.4.0.5144
 -- --------------------------------------------------------
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
@@ -87,24 +87,20 @@ CREATE TABLE IF NOT EXISTS `editor_gestione` (
 -- L’esportazione dei dati non era selezionata.
 -- Dump della struttura di tabella postapp.log_request
 CREATE TABLE IF NOT EXISTS `log_request` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `POST` text,
-  `GET` text,
-  `SERVER` text,
-  `SESSION` text,
-  `ip` varchar(15) DEFAULT NULL,
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `_POST` text,
+  `_GET` text,
+  `_SERVER` text,
+  `_SESSION` text,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- L’esportazione dei dati non era selezionata.
 -- Dump della struttura di tabella postapp.log_response
 CREATE TABLE IF NOT EXISTS `log_response` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `request_id` bigint(20) unsigned NOT NULL,
   `response` text,
-  `ip` varchar(15) DEFAULT NULL,
-  `request_id` int(11) unsigned DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `FK_log_response_log_request` (`request_id`),
+  PRIMARY KEY (`request_id`),
   CONSTRAINT `FK_log_response_log_request` FOREIGN KEY (`request_id`) REFERENCES `log_request` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
