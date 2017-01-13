@@ -467,7 +467,7 @@
     {
         $idUtente = getIdUtenteFromSession();
         $query = "SELECT id,nome,localita,geo_coordinate as coordinate,descrizione,immagine, (SELECT COUNT(*) FROM editor_follow WHERE id_editor=?) as followers,(SELECT COUNT(*) FROM editor_follow WHERE id_editor=? AND id_utente=?) as following FROM editor WHERE approvato = 1 AND id = ?";
-        return dbSelect($query, "iiii", array($idEditor,$idEditor,$idUtente,$idEditor));
+        return dbSelect($query, "iiii", array($idEditor,$idEditor,$idUtente,$idEditor), true);
     }
     function CercaEditor($nomeCercare)
     {

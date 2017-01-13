@@ -88,10 +88,10 @@
 	{
 		$result = StatusCodes::LOGIN_ERROR;
 		$query = "SELECT id FROM utente WHERE codice_utente = ?";
-		if(dbSelect($query, "s", array($accessCode), true) != null)
+		if(($res = dbSelect($query, "s", array($accessCode), true)) != null)
 		{
 			$result = StatusCodes::OK;
-			$_SESSION["idUtente"] = $id;
+			$_SESSION["idUtente"] = $res["id"];
 		}
         return $result;
 	}
