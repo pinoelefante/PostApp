@@ -86,42 +86,19 @@
 	}
 	function Access($accessCode)
 	{
-		$query = "SELECT id FROM utente WHERE codice_utente = ?";
-		$dbConn = dbConnect();
 		$result = StatusCodes::LOGIN_ERROR;
-        if($st = $dbConn->prepare($query))
-        {
-            $st->bind_param("s",$accessCode);
-            $st->execute();
-
-            $st->bind_result($id);
-            if($st->fetch())
-			{
-                $result = StatusCodes::OK;
-				$_SESSION["idUtente"] = $id;
-			}
-            $st->close();
-        }
-        dbClose($dbConn);
+		$query = "SELECT id FROM utente WHERE codice_utente = ?";
+		if(dbSelect($query, "s", array($accessCode), true) != null)
+		{
+			$result = StatusCodes::OK;
+			$_SESSION["idUtente"] = $id;
+		}
         return $result;
 	}
 	function IsCodiceUtenteEsiste($codice)
 	{
 		$query = "SELECT id FROM utente WHERE codice_utente = ?";
-		$dbConn = dbConnect();
-		$result = FALSE;
-        if($st = $dbConn->prepare($query))
-        {
-            $st->bind_param("s",$codice);
-            $st->execute();
-
-            $st->bind_result($id);
-            if($st->fetch())
-                $result = TRUE;
-            $st->close();
-        }
-        dbClose($dbConn);
-        return $result;
+		return dbSelect($query, "s", array($codice), true) != null;
 	}
 	function RegistraComuneResidenza($loc)
 	{

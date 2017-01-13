@@ -22,13 +22,14 @@
             LogMessage("(".$mysqli->errno.") ".$mysqli->error, "mysql.log");
         $mysqli->close();
     }
-    function dbUpdate($query,$parametersType,$parameters, $returnType = DatabaseReturns::RETURN_BOOLEAN)
+    function dbUpdate($query,$parametersType = null,$parameters = null, $returnType = DatabaseReturns::RETURN_BOOLEAN)
     {
         $res = false;
         $dbConn = dbConnect();
         if($st = $dbConn->prepare($query))
         {
-            call_user_func_array(array($st, 'bind_param'), array_merge(array($parametersType), makeValuesReferenced($parameters)));
+            if($parametersType!=null)
+                call_user_func_array(array($st, 'bind_param'), array_merge(array($parametersType), makeValuesReferenced($parameters)));
             $res = $st->execute();
             switch($returnType)
             {
@@ -47,15 +48,32 @@
         dbClose($dbConn);
         return $res;
     }
-    function dbSelect($query,$parametersType,$parameters)
+    function dbSelect($query,$parametersType = null,$parameters = null,$oneRow = false)
     {
         $res = false;
         $dbConn = dbConnect();
         if($st = $dbConn->prepare($query))
         {
-            call_user_func_array(array($st, 'bind_param'), array_merge(array($parametersType), makeValuesReferenced($parameters)));
-            $res = $st->execute();
-            //TODO fetch
+            if($parametersType!=null)
+                call_user_func_array(array($st, 'bind_param'), array_merge(array($parametersType), makeValuesReferenced($parameters)));
+            if($st->execute())
+            {
+                if($oneRow)
+                    $res = null;
+                else
+                    $res = array();
+                $result = $st->get_result();
+                while($row = $result->fetch_array(MYSQLI_ASSOC))
+                {
+                    if($oneRow)
+                    {
+                        $res = $row;
+                        break;
+                    }
+                    else
+                        array_push($res,$row);
+                }
+            }
             $st->close();
         }
         dbClose($dbConn);

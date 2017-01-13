@@ -316,83 +316,23 @@
     function ListEditor()
     {
         $idUtente = getIdUtenteFromSession();
-        $query = "SELECT e.id,e.nome,eg.ruolo FROM editor AS e JOIN editor_gestione AS eg ON e.id=eg.id_editor WHERE eg.id_utente = ? AND e.approvato = 1";
-        $result = StatusCodes::FAIL;
-        $dbConn = dbConnect();
-        if($st = $dbConn->prepare($query))
-        {
-            $st->bind_param("i", $idUtente);
-            $result = $st->execute() ? StatusCodes::OK : StatusCodes::FAIL;
-            if($result == StatusCodes::OK)
-            {
-                $st->bind_result($editorId,$editorNome,$utenteRuolo);
-                $result = array();
-                while($st->fetch())
-                {
-                    $editor = array("id"=>$editorId,
-                        "nome"=>$editorNome,
-                        "ruolo"=>$utenteRuolo);
-                    array_push($result, $editor);
-                }
-            }
-            $st->close();
-        }
-        dbClose($dbConn);
-        return $result;
+        $query = "SELECT e.id as id,e.nome as nome,eg.ruolo as ruolo FROM editor AS e JOIN editor_gestione AS eg ON e.id=eg.id_editor WHERE eg.id_utente = ? AND e.approvato = 1";
+        $result = dbSelect($query, "i", array($idUtente));
+        return $result == null ? StatusCodes::FAIL : $result;
     }
     function ListEditorDaApprovare()
     {
         $idUtente = getIdUtenteFromSession();
-        $query = "SELECT e.id,e.nome,eg.ruolo FROM editor AS e JOIN editor_gestione AS eg ON e.id=eg.id_editor WHERE eg.id_utente = ? AND e.approvato = 0";
-        $result = StatusCodes::FAIL;
-        $dbConn = dbConnect();
-        if($st = $dbConn->prepare($query))
-        {
-            $st->bind_param("i", $idUtente);
-            $result = $st->execute() ? StatusCodes::OK : StatusCodes::FAIL;
-            if($result == StatusCodes::OK)
-            {
-                $st->bind_result($editorId,$editorNome,$utenteRuolo);
-                $result = array();
-                while($st->fetch())
-                {
-                    $editor = array("id"=>$editorId,
-                        "nome"=>$editorNome,
-                        "ruolo"=>$utenteRuolo);
-                    array_push($result, $editor);
-                }
-            }
-            $st->close();
-        }
-        dbClose($dbConn);
-        return $result;
+        $query = "SELECT e.id as id,e.nome as nome,eg.ruolo as ruolo FROM editor AS e JOIN editor_gestione AS eg ON e.id=eg.id_editor WHERE eg.id_utente = ? AND e.approvato = 0";
+        $result = dbSelect($query, "i", array($idUtente));
+        return $result == null ? StatusCodes::FAIL : $result;
     }
     function ListReaderEditors()
     {
         $idUtente = getIdUtenteFromSession();
-        $query = "SELECT e.id,e.nome,e.immagine FROM editor AS e JOIN editor_follow AS ef ON e.id=ef.id_editor WHERE ef.id_utente = ? AND e.approvato = 1";
-        $result = StatusCodes::FAIL;
-        $dbConn = dbConnect();
-        if($st = $dbConn->prepare($query))
-        {
-            $st->bind_param("i", $idUtente);
-            $result = $st->execute() ? StatusCodes::OK : StatusCodes::FAIL;
-            if($result == StatusCodes::OK)
-            {
-                $st->bind_result($editorId,$editorNome,$editorImg);
-                $result = array();
-                while($st->fetch())
-                {
-                    $editor = array("id"=>$editorId,
-                        "nome"=>$editorNome,
-                        "immagine"=>$editorImg);
-                    array_push($result, $editor);
-                }
-            }
-            $st->close();
-        }
-        dbClose($dbConn);
-        return $result;
+        $query = "SELECT e.id as id,e.nome as nome,e.immagine as immagine FROM editor AS e JOIN editor_follow AS ef ON e.id=ef.id_editor WHERE ef.id_utente = ? AND e.approvato = 1";
+        $result = dbSelect($query, "i", array($idUtente));
+        return $result == null ? StatusCodes::FAIL : $result;
     }
     function PostEditor($idEditor, $idUtente, $titolo, $corpo, $immagine, $posizione)
     {
@@ -417,96 +357,27 @@
     function GetNotifications($from)
     {
         $idUtente = getIdUtenteFromSession();
-        $query = "SELECT e.id,e.nome,n.id,n.titolo,n.corpo,n.data,n.immagine,n.posizione FROM editor AS e JOIN editor_follow AS ef JOIN news_editor AS n WHERE ef.id_editor=e.id AND ef.id_editor=n.pubblicataDaEditor AND ef.id_utente = ? AND n.data > ? AND n.notificabile = 1";
-        $dbConn = dbConnect();
-        $result = StatusCodes::FAIL;
-        if($st = $dbConn->prepare($query))
-        {
-            $st->bind_param("ii", $idUtente, $from);
-            if($st->execute())
-            {
-                $st->bind_result($editorId,$editorNome, $newsId, $newsTitolo, $newsCorpo, $newsData, $newsImmagine, $newsPosizione);
-                $result = array();
-                while($st->fetch())
-                {
-                    $news = array("editorId"=>$editorId,
-                        "editorNome" => $editorNome,
-                        "newsId" => $newsId,
-                        "titolo" => $newsTitolo,
-                        //"corpo" => $newsCorpo,
-                        "data" => $newsData,
-                        "immagine" => $newsImmagine,
-                        "posizione" => $newsPosizione);
-                    array_push($result, $news);
-                }
-            }
-            $st->close();
-        }
-        dbClose($dbConn);
-        return $result;
+        $query = "SELECT e.id as editorId,e.nome as editorNome,n.id as newsId,n.titolo as titolo,n.corpo as corpo,n.data as data,n.immagine as immagine,n.posizione as posizione FROM editor AS e JOIN editor_follow AS ef JOIN news_editor AS n WHERE ef.id_editor=e.id AND ef.id_editor=n.pubblicataDaEditor AND ef.id_utente = ? AND n.data > ? AND n.notificabile = 1";
+        return dbSelect($query,"ii",array($idUtente, $from));
     }
     function GetNews($idNews)
     {
-        $query = "SELECT ed.id, ed.nome,n.id,n.titolo,n.corpo,n.data,n.immagine,n.posizione, (SELECT COUNT(*) FROM news_editor_thankyou WHERE id_news=n.id) AS thankyou FROM editor AS ed JOIN news_editor AS n ON ed.id=n.pubblicataDaEditor WHERE n.id=?";
-        $dbConn = dbConnect();
-        $result = StatusCodes::FAIL;
-        if($st = $dbConn->prepare($query))
-        {
-            $st->bind_param("i", $idNews);
-            if($st->execute())
-            {
-                $st->bind_result($editorId,$editorNome, $newsId, $newsTitolo, $newsCorpo, $newsData, $newsImmagine, $newsPosizione,$thanks);
-                if($st->fetch())
-                {
-                    $result = array("editorId"=>$editorId,
-                        "editorNome" => $editorNome,
-                        "newsId" => $newsId,
-                        "titolo" => $newsTitolo,
-                        "corpo" => $newsCorpo,
-                        "data" => $newsData,
-                        "immagine" => $newsImmagine,
-                        "posizione" => $newsPosizione,
-                        "thankyou" => $thanks);
-                }
-                else
-                    $result = StatusCodes::EDITOR_NEWS_NON_TROVATA;
-            }
-            $st->close();
-        }
-        dbClose($dbConn);
-        return $result;
+        $query = "SELECT ed.id as editorId,ed.nome as editorNome,n.id as newsId,n.titolo as titolo,n.corpo as corpo,n.data as data,n.immagine as immagine,n.posizione as posizione, (SELECT COUNT(*) FROM news_editor_thankyou WHERE id_news=n.id) AS thankyou FROM editor AS ed JOIN news_editor AS n ON ed.id=n.pubblicataDaEditor WHERE n.id=?";
+        $result = dbSelect($query,"i",array($idNews), true);
+        return $result == null ? StatusCodes::EDITOR_NEWS_NON_TROVATA : $result;
     }
     function GetNewsEditor($idEditor, $from)
     {
-        $query = empty($from) ? 
-        "SELECT ed.id, ed.nome,n.id,n.titolo,n.corpo,n.data,n.immagine,n.posizione FROM editor AS ed JOIN news_editor AS n ON ed.id=n.pubblicataDaEditor WHERE n.pubblicataDaEditor=? AND ed.approvato=1 ORDER BY n.data DESC LIMIT 10":
-        "SELECT ed.id, ed.nome,n.id,n.titolo,n.corpo,n.data,n.immagine,n.posizione FROM editor AS ed JOIN news_editor AS n ON ed.id=n.pubblicataDaEditor WHERE n.pubblicataDaEditor=? AND n.id < ? AND ed.approvato=1 ORDER BY n.data DESC LIMIT 10";
-        $dbConn = dbConnect();
-        $result = StatusCodes::FAIL;
-        if($st = $dbConn->prepare($query))
+        if(empty($from))
         {
-            empty($from) ? $st->bind_param("i", $idEditor) : $st->bind_param("ii", $idEditor,$from);
-            if($st->execute())
-            {
-                $st->bind_result($editorId,$editorNome, $newsId, $newsTitolo, $newsCorpo, $newsData, $newsImmagine, $newsPosizione);
-                $result = array();
-                while($st->fetch())
-                {
-                    $news = array("editorId"=>$editorId,
-                        "editorNome" => $editorNome,
-                        "newsId" => $newsId,
-                        "titolo" => $newsTitolo,
-                        "corpo" => $newsCorpo,
-                        "data" => $newsData,
-                        "immagine" => $newsImmagine,
-                        "posizione" => $newsPosizione);
-                    array_push($result, $news);
-                }
-            }
-            $st->close();
+            $query = "SELECT ed.id as editorId, ed.nome as editorNome,n.id as newsId,n.titolo as titolo,n.corpo as corpo,n.data as data,n.immagine as immagine,n.posizione as posizione FROM editor AS ed JOIN news_editor AS n ON ed.id=n.pubblicataDaEditor WHERE n.pubblicataDaEditor=? AND ed.approvato=1 ORDER BY n.data DESC LIMIT 10";
+            return dbSelect($query, "i", array($idEditor));
         }
-        dbClose($dbConn);
-        return $result;
+        else 
+        {
+            $query = "SELECT ed.id as editorId, ed.nome as editorNome,n.id as newsId,n.titolo as titolo,n.corpo as corpo,n.data as data,n.immagine as immagine,n.posizione as posizione FROM editor AS ed JOIN news_editor AS n ON ed.id=n.pubblicataDaEditor WHERE n.pubblicataDaEditor=? AND n.id < ? AND ed.approvato=1 ORDER BY n.data DESC LIMIT 10";
+            return dbSelect($query, "ii", array($idEditor,$from));
+        }
     }
     //TODO: DA VERIFICARE SE BISOGNA ESEGUIRLO QUANDO VIENE APPROVATO L'EDITOR
     function AutoFollowComune($idEditor, $loc)
@@ -525,81 +396,26 @@
     }
     function GetEditorsByLocation($location)
     {
-        $query = "SELECT id,nome,categoria,immagine FROM editor WHERE localita = ? AND approvato=1";
-        $result = StatusCodes::FAIL;
-        $dbConn = dbConnect();
-        if($st = $dbConn->prepare($query))
-        {
-            $st->bind_param("s",$location);
-            if($st->execute())
-            {
-                $st->bind_result($editorId,$editorNome,$editorCategoria,$immagine);
-                $result = array();
-                while($st->fetch())
-                {
-                    $editor = array("editorId"=>$editorId,
-                        "editorNome" => $editorNome,
-                        "editorCategoria" => $editorCategoria,
-                        "immagine" => $immagine);
-                    array_push($result, $editor);
-                }
-            }
-        }
-        dbClose($dbConn);
-        return $result;
+        $query = "SELECT id as editorId,nome as editorNome,categoria as editorCategoria,immagine as immagine FROM editor WHERE localita = ? AND approvato=1";
+        return dbSelect($query,"s", array($location));
     }
     function GetComuniConEditors()
     {
-        $query = "SELECT istat, comune FROM comune WHERE istat IN (SELECT DISTINCT localita FROM editor) ORDER BY comune";
-        $result = StatusCodes::FAIL;
-        $dbConn = dbConnect();
-        if($st = $dbConn->prepare($query))
-        {
-            if($st->execute())
-            {
-                $st->bind_result($istat, $nomeComune);
-                $result = array();
-                while($st->fetch())
-                {
-                    $comune = array("id"=>$istat, "comune"=>$nomeComune);
-                    array_push($result, $comune);
-                }
-            }
-            $st->close();
-        }
-        dbClose($dbConn);
-        return $result;
+        $query = "SELECT istat as id, comune as comune FROM comune WHERE istat IN (SELECT DISTINCT localita FROM editor) ORDER BY comune";
+        return dbSelect($query);
     }
     function GetNewsDaTuttiGliEditor($idStart = NULL)
     {
-        $query = $idStart == NULL ?
-                "SELECT e.id, e.nome,n.id,n.titolo,n.corpo,n.data,n.immagine,n.posizione FROM news_editor AS n JOIN editor AS e ON n.pubblicataDaEditor=e.id WHERE e.approvato = 1 ORDER BY n.data DESC LIMIT 50" :
-                "SELECT e.id, e.nome,n.id,n.titolo,n.corpo,n.data,n.immagine,n.posizione FROM news_editor AS n JOIN editor AS e ON n.pubblicataDaEditor=e.id WHERE e.approvato = 1 AND n.id < $idStart ORDER BY n.data DESC LIMIT 50";
-        $dbConn = dbConnect();
-        $result = StatusCodes::FAIL;
-        if($st = $dbConn->prepare($query))
+        if($idStart == NULL)
         {
-            if($st->execute())
-            {
-                $st->bind_result($editorId,$editorNome, $newsId, $newsTitolo, $newsCorpo, $newsData, $newsImmagine, $newsPosizione);
-                $result = array();
-                while($st->fetch())
-                {
-                    $news = array("editorId"=>$editorId,
-                        "editorNome" => $editorNome,
-                        "newsId" => $newsId,
-                        "titolo" => $newsTitolo,
-                        //"corpo" => $newsCorpo,
-                        "data" => $newsData,
-                        "immagine" => $newsImmagine,
-                        "posizione" => $newsPosizione);
-                    array_push($result, $news);
-                }
-            }
-            $st->close();
+            $query = "SELECT e.id as editorId, e.nome as editorNome,n.id as newsId,n.titolo as titolo,n.corpo as corpo,n.data as data,n.immagine as immagine,n.posizione as posizione FROM news_editor AS n JOIN editor AS e ON n.pubblicataDaEditor=e.id WHERE e.approvato = 1 ORDER BY n.data DESC LIMIT 50";
+            return dbSelect($query);
         }
-        dbClose($dbConn);
-        return $result;
+        else 
+        {
+            $query = "SELECT e.id as editorId, e.nome as editorNome,n.id as newsId,n.titolo as titolo,n.corpo as corpo,n.data as data,n.immagine as immagine,n.posizione as posizione FROM news_editor AS n JOIN editor AS e ON n.pubblicataDaEditor=e.id WHERE e.approvato = 1 AND n.id < ? ORDER BY n.data DESC LIMIT 50";
+            return dbSelect($query,"i",array($idStart));
+        }
     }
     function AddDescrizioneEditor($idEditor, $descrizione)
     {
@@ -624,141 +440,34 @@
     function GetAllMyNewsFrom($lastId = NULL)
     {
         $idUtente = getIdUtenteFromSession();
-        $query = $lastId == NULL ?
-                 "SELECT e.id,e.nome,n.id,n.titolo,n.corpo,n.data,n.immagine,n.posizione, (SELECT COUNT(*) FROM news_editor_letta WHERE id_utente = ? AND id_news=n.id) AS letta FROM editor AS e JOIN editor_follow AS ef JOIN news_editor AS n ON ef.id_editor=e.id AND ef.id_editor=n.pubblicataDaEditor WHERE ef.id_utente = ? ORDER BY n.data DESC LIMIT 10" :
-                 "SELECT e.id,e.nome,n.id,n.titolo,n.corpo,n.data,n.immagine,n.posizione, (SELECT COUNT(*) FROM news_editor_letta WHERE id_utente = ? AND id_news=n.id) AS letta FROM editor AS e JOIN editor_follow AS ef JOIN news_editor AS n ON ef.id_editor=e.id AND ef.id_editor=n.pubblicataDaEditor WHERE ef.id_utente = ? AND n.id < ? ORDER BY n.data DESC LIMIT 10";
-        $result = StatusCodes::FAIL;
-        $dbConn = dbConnect();
-        if($st = $dbConn->prepare($query))
+        if($lastId == NULL)
         {
-            $lastId == NULL ? $st->bind_param("ii", $idUtente,$idUtente) : $st->bind_param("iii", $idUtente,$idUtente,$lastId);
-            $result = $st->execute() ? StatusCodes::OK : StatusCodes::FAIL;
-            if($result == StatusCodes::OK)
-            {
-                $st->bind_result($enteId,$enteNome, $newsId,$newsTitolo,$newsCorpo,$newsData,$newsImmagine,$newsPosizione,$newsLetta);
-                $result = array();
-                while($st->fetch())
-                {
-                    $news = array(
-                        "editorId"=>$enteId,
-                        "editorNome"=>$enteNome,
-                        "newsId"=>$newsId,
-                        "titolo"=>$newsTitolo,
-                        "corpo"=>$newsCorpo,
-                        "data"=>$newsData,
-                        "immagine"=>$newsImmagine,
-                        "posizione"=>$newsPosizione,
-                        "letta"=>$newsLetta
-                    );
-                    array_push($result, $news);
-                }
-            }
-            $st->close();
+            $query = "SELECT e.id as editorId,e.nome as editorNome,n.id as newsId,n.titolo as titolo,n.corpo as corpo,n.data as data,n.immagine as immagine,n.posizione as posizione, (SELECT COUNT(*) FROM news_editor_letta WHERE id_utente = ? AND id_news=n.id) AS letta FROM editor AS e JOIN editor_follow AS ef JOIN news_editor AS n ON ef.id_editor=e.id AND ef.id_editor=n.pubblicataDaEditor WHERE ef.id_utente = ? ORDER BY n.data DESC LIMIT 10";
+            return dbSelect($query, "ii", array($idUtente,$idUtente));
         }
-        dbClose($dbConn);
-        return $result;
+        else 
+        {
+            $query = "SELECT e.id as editorId,e.nome as editorNome,n.id as newsId,n.titolo as titolo,n.corpo as corpo,n.data as data,n.immagine as immagine,n.posizione as posizione, (SELECT COUNT(*) FROM news_editor_letta WHERE id_utente = ? AND id_news=n.id) AS letta FROM editor AS e JOIN editor_follow AS ef JOIN news_editor AS n ON ef.id_editor=e.id AND ef.id_editor=n.pubblicataDaEditor WHERE ef.id_utente = ? AND n.id < ? ORDER BY n.data DESC LIMIT 10";
+            return dbSelect($query, "iii", array($idUtente,$idUtente,$lastId));
+        }
     }
     function GetAllMyNewsTo($to)
     {
         $idUtente = getIdUtenteFromSession();
-        $query = "SELECT e.id,e.nome,n.id,n.titolo,n.corpo,n.data,n.immagine,n.posizione, (SELECT COUNT(*) FROM news_editor_letta WHERE id_utente = ? AND id_news=n.id) AS letta FROM editor AS e JOIN editor_follow AS ef JOIN news_editor AS n ON ef.id_editor=e.id AND ef.id_editor=n.pubblicataDaEditor WHERE ef.id_utente = ? AND n.id > ? ORDER BY n.data DESC";
-        $result = StatusCodes::FAIL;
-        $dbConn = dbConnect();
-        if($st = $dbConn->prepare($query))
-        {
-            $st->bind_param("iii", $idUtente,$idUtente,$to);
-            $result = $st->execute() ? StatusCodes::OK : StatusCodes::SQL_FAIL;
-            if($result == StatusCodes::OK)
-            {
-                $st->bind_result($enteId,$enteNome, $newsId,$newsTitolo,$newsCorpo,$newsData,$newsImmagine,$newsPosizione,$newsLetta);
-                $result = array();
-                while($st->fetch())
-                {
-                    $news = array(
-                        "editorId"=>$enteId,
-                        "editorNome"=>$enteNome,
-                        "newsId"=>$newsId,
-                        "titolo"=>$newsTitolo,
-                        "corpo"=>$newsCorpo,
-                        "data"=>$newsData,
-                        "immagine"=>$newsImmagine,
-                        "posizione"=>$newsPosizione,
-                        "letta"=>$newsLetta
-                    );
-                    array_push($result, $news);
-                }
-            }
-            $st->close();
-        }
-        dbClose($dbConn);
-        return $result;
+        $query = "SELECT e.id as editorId,e.nome as editorNome,n.id as newsId,n.titolo as titolo,n.corpo as corpo,n.data as data,n.immagine as immagine,n.posizione as posizione, (SELECT COUNT(*) FROM news_editor_letta WHERE id_utente = ? AND id_news=n.id) AS letta FROM editor AS e JOIN editor_follow AS ef JOIN news_editor AS n ON ef.id_editor=e.id AND ef.id_editor=n.pubblicataDaEditor WHERE ef.id_utente = ? AND n.id > ? ORDER BY n.data DESC";
+        return dbSelect($query, "iii", array($idUtente,$idUtente,$to));
     }
     function GetEditorNewsFromTo($idEditor,$from,$to) //'from' è maggiore di 'to'
     {
         $idUtente = getIdUtenteFromSession();
-        $query = "SELECT e.id,e.nome,n.id,n.titolo,n.corpo,n.data,n.immagine,n.posizione,(SELECT COUNT(*) FROM news_editor_letta WHERE id_utente = ? AND id_news = n.id) AS letta FROM news_editor AS n JOIN editor AS e ON n.pubblicataDaEditor=e.id WHERE e.id=? AND n.id < ? AND n.id > ? ORDER BY data DESC";
-        $result = StatusCodes::FAIL;
-        $dbConn = dbConnect();
-        if($st = $dbConn->prepare($query))
-        {
-            $st->bind_param("iiii", $idUtente,$idEditor,$from,$to);
-            $result = $st->execute() ? StatusCodes::OK : StatusCodes::SQL_FAIL;
-            if($result == StatusCodes::OK)
-            {
-                $st->bind_result($enteId,$enteNome, $newsId,$newsTitolo,$newsCorpo,$newsData,$newsImmagine,$newsPosizione,$newsLetta);
-                $result = array();
-                while($st->fetch())
-                {
-                    $news = array(
-                        "editorId"=>$enteId,
-                        "editorNome"=>$enteNome,
-                        "newsId"=>$newsId,
-                        "titolo"=>$newsTitolo,
-                        "corpo"=>$newsCorpo,
-                        "data"=>$newsData,
-                        "immagine"=>$newsImmagine,
-                        "posizione"=>$newsPosizione,
-                        "letta"=>$newsLetta
-                    );
-                    array_push($result, $news);
-                }
-            }
-            $st->close();
-        }
-        dbClose($dbConn);
-        return $result;
+        $query = "SELECT e.id as editorId,e.nome as editorNome,n.id as newsId,n.titolo as titolo,n.corpo as corpo,n.data as data,n.immagine as immagine,n.posizione as posizione,(SELECT COUNT(*) FROM news_editor_letta WHERE id_utente = ? AND id_news = n.id) AS letta FROM news_editor AS n JOIN editor AS e ON n.pubblicataDaEditor=e.id WHERE e.id=? AND n.id < ? AND n.id > ? ORDER BY data DESC";
+        return dbSelect($query, "iiii", array($idUtente,$idEditor,$from,$to));
     }
     function GetInfoEditor($idEditor)
     {
         $idUtente = getIdUtenteFromSession();
-        $query = "SELECT id,nome,localita,geo_coordinate,descrizione,immagine, (SELECT COUNT(*) FROM editor_follow WHERE id_editor=?) as followers,(SELECT COUNT(*) FROM editor_follow WHERE id_editor=? AND id_utente=?) as following FROM editor WHERE approvato = 1 AND id = ?";
-        $result = StatusCodes::FAIL;
-        $dbConn = dbConnect();
-        if($st = $dbConn->prepare($query))
-        {
-            $st->bind_param("iiii", $idEditor,$idEditor,$idUtente,$idEditor);
-            $result = $st->execute() ? StatusCodes::OK : StatusCodes::SQL_FAIL;
-            if($result == StatusCodes::OK)
-            {
-                $st->bind_result($id,$nome,$localita,$geo,$descrizione,$immagine,$followers,$following);
-                if($st->fetch())
-                {
-                    $result = array(
-                        "id"=>$id,
-                        "nome"=>$nome,
-                        "localita"=>$localita,
-                        "coordinate"=>$geo,
-                        "descrizione"=>$descrizione,
-                        "immagine"=>$immagine,
-                        "followers"=>$followers,
-                        "following"=>$following
-                    );
-                }
-            }
-            $st->close();
-        }
-        dbClose($dbConn);
-        return $result;
+        $query = "SELECT id,nome,localita,geo_coordinate as coordinate,descrizione,immagine, (SELECT COUNT(*) FROM editor_follow WHERE id_editor=?) as followers,(SELECT COUNT(*) FROM editor_follow WHERE id_editor=? AND id_utente=?) as following FROM editor WHERE approvato = 1 AND id = ?";
+        return dbSelect($query, "iiii", array($idEditor,$idEditor,$idUtente,$idEditor));
     }
     function CercaEditor($nomeCercare)
     {
@@ -787,84 +496,26 @@
     {
         $idUtente = getIdUtenteFromSession();
         $query = "SELECT eg.ruolo FROM editor_gestione AS eg JOIN editor AS e ON e.id=eg.id_editor WHERE eg.id_utente = ? AND eg.id_editor = ? AND e.approvato = 1";
-        $result = StatusCodes::FAIL;
-        $dbConn = dbConnect();
-        if($st = $dbConn->prepare($query))
-        {
-            $st->bind_param("ii", $idUtente,$idEditor);
-            $result = $st->execute() ? StatusCodes::OK : StatusCodes::FAIL;
-            if($result == StatusCodes::OK)
-            {
-                $st->bind_result($ruolo);
-                $result = $st->fetch() ? StatusCodes::OK : StatusCodes::EDITOR_UTENTE_NON_AUTORIZZATO;
-            }
-            $st->close();
-        }
-        dbClose($dbConn);
-        return $result;
+        $result = dbSelect($query, "ii", array($idUtente,$idEditor));
+        return $result == null ? StatusCodes::EDITOR_UTENTE_NON_AUTORIZZATO : StatusCodes::OK;
     }
     function VerificaAutorizzatoAModificareEditor($idEditor)
     {
         $idUtente = getIdUtenteFromSession();
         $query = "SELECT eg.ruolo FROM editor_gestione AS eg JOIN editor AS e ON e.id=eg.id_editor WHERE eg.id_utente = ? AND eg.id_editor = ? AND e.approvato = 1 AND eg.ruolo ='admin'";
-        $result = StatusCodes::FAIL;
-        $dbConn = dbConnect();
-        if($st = $dbConn->prepare($query))
-        {
-            $st->bind_param("ii", $idUtente,$idEditor);
-            $result = $st->execute() ? StatusCodes::OK : StatusCodes::FAIL;
-            if($result == StatusCodes::OK)
-            {
-                $st->bind_result($ruolo);
-                $result = $st->fetch() ? StatusCodes::OK : StatusCodes::EDITOR_UTENTE_NON_AUTORIZZATO;
-            }
-            $st->close();
-        }
-        dbClose($dbConn);
-        return $result;
+        $result = dbSelect($query, "ii", array($idUtente,$idEditor));
+        return $result == null ? StatusCodes::EDITOR_UTENTE_NON_AUTORIZZATO : StatusCodes::OK;
     }
     function GetUtentiSeguonoEditorNotificabili($idEditor)
     {
-        $query = "SELECT dev.id_utente,dev.token,dev.deviceOS FROM editor_follow AS foll JOIN push_devices AS dev ON foll.id_utente=dev.id_utente WHERE foll.id_editor=? AND foll.notificabile=1";
-        $result = StatusCodes::FAIL;
-        $dbConn = dbConnect();
-        if($st = $dbConn->prepare($query))
-        {
-            $st->bind_param("i",$idEditor);
-            $result = $st->execute() ? StatusCodes::OK : StatusCodes::SQL_FAIL;
-            if($result == StatusCodes::OK)
-            {
-                $st->bind_result($idUtente,$token,$deviceOS);
-                $result = array();
-                while($st->fetch())
-                {
-                    $device = array("user"=>$idUtente, "token"=>$token,"deviceOS"=>$deviceOS);
-                    array_push($result, $device);
-                }
-            }
-            $st->close();
-        }
-        dbClose($dbConn);
-        return $result;
+        $query = "SELECT dev.id_utente as user,dev.token as token,dev.deviceOS as deviceOS FROM editor_follow AS foll JOIN push_devices AS dev ON foll.id_utente=dev.id_utente WHERE foll.id_editor=? AND foll.notificabile=1";
+        return dbSelect($query, "i", array($idEditor));
     }
     function GetEditorNomeById($idEditor)
     {
         $query = "SELECT nome FROM editor WHERE id = ?";
-        $result = "";
-        $dbConn = dbConnect();
-        if($st = $dbConn->prepare($query))
-        {
-            $st->bind_param("i",$idEditor);
-            if($st->execute())
-            {
-                $st->bind_result($nomeEditor);
-                if($st->fetch())
-                    $result = $nomeEditor;
-            }
-            $st->close();
-        }
-        dbClose($dbConn);
-        return $result;
+        $result = dbSelect($query, "i", array($idEditor), true);
+        return $result == null ? "" : $result["nome"];
     }
     function InviaNotificaPush($idEditor,$titolo,$corpo,$id_news)
     {
